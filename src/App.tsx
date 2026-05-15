@@ -648,26 +648,15 @@ export default function App() {
 
   if (isInitializing || loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#050505] relative overflow-hidden text-center">
-        <div className="absolute inset-0 ambient-glow opacity-30"></div>
-        <div className="relative mb-8">
-          <div className="absolute inset-0 bg-emerald-500/10 blur-xl rounded-full scale-125"></div>
-          <div className="relative z-10 w-24 h-24 rounded-[32px] bg-[#1a1a1a] p-3 shadow-2xl flex items-center justify-center">
-            <Loader2 className="w-12 h-12 text-emerald-500 animate-spin" />
-            <img 
-              src="/logo.png" 
-              alt="PepeTask" 
-              className="absolute w-12 h-12 object-contain opacity-50"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Pepe&backgroundColor=c0ebaf';
-              }}
-            />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+        <div className="relative mb-6">
+          <div className="w-16 h-16 rounded-3xl bg-slate-50 flex items-center justify-center border border-slate-100 shadow-sm">
+            <Loader2 className="w-8 h-8 text-slate-900 animate-spin" />
           </div>
         </div>
         <div>
-          <h2 className="text-lg font-black font-display tracking-[0.2em] text-white">PEPETASK</h2>
-          <p className="mt-1 text-emerald-500/60 font-display font-medium tracking-[0.2em] uppercase text-[7px] animate-pulse">
+          <h2 className="text-sm font-black tracking-widest text-slate-900 uppercase">Syncing Protocol</h2>
+          <p className="mt-1 text-slate-400 font-bold uppercase tracking-widest text-[8px]">
             {initStep}
           </p>
         </div>
@@ -677,247 +666,207 @@ export default function App() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#050505] p-8 text-center">
-        <div className="w-24 h-24 glass-neon rounded-[32px] flex items-center justify-center mb-8 ring-1 ring-emerald-500/10">
-          <ShieldCheck className="w-12 h-12 text-red-500" />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white p-8 text-center">
+        <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mb-8 border border-slate-100">
+          <ShieldCheck className="w-10 h-10 text-slate-300" />
         </div>
-        <h2 className="text-2xl font-bold text-white mb-3 font-display">System Protocol Error</h2>
-        <p className="text-emerald-500/60 mb-10 max-w-[280px] mx-auto text-xs font-medium tracking-wide leading-relaxed uppercase">
+        <h2 className="text-xl font-bold text-slate-900 mb-3">Connection Lost</h2>
+        <p className="text-slate-400 mb-10 max-w-[280px] mx-auto text-[10px] font-bold tracking-widest leading-relaxed uppercase">
           {error}
         </p>
         <button 
           onClick={() => window.location.reload()} 
-          className="glass-neon px-12 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] text-white hover:scale-105 transition-transform active:scale-95"
+          className="w-full max-w-[200px] h-12 bg-slate-900 rounded-2xl font-black text-[10px] uppercase tracking-widest text-white active:scale-95 transition-all"
         >
-          Re-establish Link
+          Retry Link
         </button>
       </div>
     );
   }
 
   return (
-    <div className="h-screen w-screen bg-[#050505] text-white font-sans flex items-center justify-center overflow-hidden relative">
-      {/* Background Visual Depth */}
-      <div className="absolute inset-0 ambient-glow opacity-20"></div>
-      <div className="absolute w-[800px] h-[800px] bg-emerald-500/5 rounded-full blur-[160px] -top-96 -left-48 pointer-events-none"></div>
-      <div className="absolute w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[140px] -bottom-64 -right-32 pointer-events-none"></div>
-
+    <div className="h-screen w-screen bg-slate-50 text-slate-900 font-sans flex items-center justify-center overflow-hidden relative">
       {/* App Container */}
-      <div className="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:max-h-[95vh] bg-[#0c0c0c] border-x sm:border border-white/5 sm:rounded-[56px] shadow-[0_0_80px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden ring-1 ring-white/5">
+      <div className="relative w-full h-full sm:w-[390px] sm:h-[844px] sm:max-h-[95vh] bg-white sm:border border-slate-100 sm:rounded-[40px] shadow-sm flex flex-col overflow-hidden">
         
-        {/* Dynamic Background Elements - Optimized for Performance */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden sm:rounded-[56px]">
-          <div className="absolute w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[80px] -top-40 -left-20"></div>
-          <div className="absolute w-[300px] h-[300px] bg-blue-500/10 rounded-full blur-[70px] -bottom-32 -right-16"></div>
-        </div>
-
-        {/* Dynamic Header - Minimalist */}
+        {/* Header */}
         <header 
           onClick={handleDebugToggle}
-          className="shrink-0 pt-8 px-5 pb-4 flex justify-between items-center z-[60] bg-[#0c0c0c]"
+          className="shrink-0 pt-10 px-8 pb-8 flex justify-between items-center z-[60] bg-white/60 backdrop-blur-2xl border-b border-slate-50/50 relative overflow-hidden"
         >
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-[0_0_20px_rgba(16,185,129,0.15)] bg-white">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500/20 via-blue-500/10 to-emerald-500/20"></div>
+          <div className="flex items-center gap-5">
+            <div className="w-13 h-13 rounded-2xl flex items-center justify-center overflow-hidden bg-white border border-slate-100 shadow-2xl p-1 relative group">
+              <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <img 
                 src="/logo.png" 
-                alt="PepeTask Logo" 
-                className="w-full h-full object-contain"
-                onLoad={(e) => {
-                  (e.target as HTMLImageElement).parentElement?.classList.remove('bg-white');
-                }}
+                alt="Logo" 
+                className="w-full h-full object-contain relative z-10 transition-transform group-hover:scale-110"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Pepe&backgroundColor=c0ebaf';
                 }}
               />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-sm font-black tracking-[0.1em] font-display text-white leading-tight">PEPETASK</h1>
-              <span className="text-[7px] font-bold text-zinc-500 uppercase tracking-[0.1em]">Complete Tasks • Earn Pepe</span>
+              <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none font-display uppercase italic">Pepe Earn</h1>
+              <div className="flex items-center gap-2 mt-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase leading-none opacity-60">Mainnet Protocol</span>
+              </div>
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="flex flex-col items-end">
-              <div className="flex items-center gap-1">
-                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest leading-none">Net_Secure</span>
-              </div>
-            </div>
-            <button 
-              onClick={() => setIsCurrencyModalOpen(true)}
-              className="w-8 h-8 rounded-lg border border-white/5 bg-white/5 flex items-center justify-center text-zinc-500 hover:text-white transition-all active:scale-90"
-            >
-              <Settings size={14} />
-            </button>
-          </div>
+          <button 
+            onClick={() => setIsCurrencyModalOpen(true)}
+            className="w-13 h-13 rounded-2xl border border-slate-100 bg-white flex items-center justify-center text-slate-400 active:scale-90 transition-all shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:text-slate-900"
+          >
+            <Settings size={22} strokeWidth={2.5} />
+          </button>
         </header>
 
-        {/* Scrollable Context */}
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-24 touch-pan-y overscroll-contain">
-          <AnimatePresence mode="wait">
-            {activeTab === 'home' && (
-              <HomeTab 
-                user={user}
-                profile={profile}
-                currencyDisplay={currencyDisplay}
-                levelProgress={levelProgress}
-                dailyProgress={dailyProgress}
-                userRank={userRank}
-                handleClaimLevelBonus={handleClaimLevelBonus}
-              />
-            )}
+        {/* content */}
+        <main className="flex-1 overflow-y-auto no-scrollbar pb-36 pt-4 touch-pan-y overscroll-contain relative scroll-smooth bg-slate-50/[0.15]">
+          {/* Subtle Ambient light for content area */}
+          <div className="fixed inset-x-0 top-32 h-[500px] bg-emerald-500/[0.03] blur-[150px] rounded-full -z-10 pointer-events-none"></div>
+          
+          {activeTab === 'home' && (
+            <HomeTab 
+              user={user}
+              profile={profile}
+              currencyDisplay={currencyDisplay}
+              levelProgress={levelProgress}
+              dailyProgress={dailyProgress}
+              userRank={userRank}
+              handleClaimLevelBonus={handleClaimLevelBonus}
+            />
+          )}
 
-            {activeTab === 'earn' && (
-              <EarnTab 
-                profile={profile}
-                adState={adState}
-                isLimitReached={isLimitReached}
-                cooldownRemaining={cooldownRemaining}
-                handleWatchAd={handleWatchAd}
-                resetCountdown={resetCountdown}
-              />
-            )}
+          {activeTab === 'earn' && (
+            <EarnTab 
+              profile={profile}
+              adState={adState}
+              isLimitReached={isLimitReached}
+              cooldownRemaining={cooldownRemaining}
+              handleWatchAd={handleWatchAd}
+              resetCountdown={resetCountdown}
+            />
+          )}
 
-            {activeTab === 'wallet' && (
-              <WalletTab 
-                profile={profile}
-                currencyDisplay={currencyDisplay}
-              />
-            )}
+          {activeTab === 'wallet' && (
+            <WalletTab 
+              profile={profile}
+              currencyDisplay={currencyDisplay}
+            />
+          )}
 
-            {activeTab === 'friends' && profile && (
-              <motion.div key="friends" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-4">
-                 <ReferralPanel 
-                   profile={profile} 
-                   onRedeemCode={redeemReferralCode}
-                 />
-              </motion.div>
-            )}
+          {activeTab === 'friends' && profile && (
+            <ReferralPanel 
+              profile={profile} 
+              onRedeemCode={redeemReferralCode}
+            />
+          )}
 
-            {activeTab === 'profile' && (
-              <ProfileTab 
-                user={user}
-                profile={profile}
-                setIsCurrencyModalOpen={setIsCurrencyModalOpen}
-              />
-            )}
+          {activeTab === 'profile' && (
+            <ProfileTab 
+              user={user}
+              profile={profile}
+              setIsCurrencyModalOpen={setIsCurrencyModalOpen}
+            />
+          )}
 
-          </AnimatePresence>
           {activeTab === 'home' && <PepePriceTicker preferredCurrency={profile?.preferredCurrency} />}
         </main>
 
+        {/* Ad Overlay */}
         <AnimatePresence>
-          {/* Ad Simulation Overlay */}
           {(adState === 'loading' || adState === 'watching') && (
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-[100] bg-black/98 backdrop-blur-lg flex flex-col items-center justify-center p-8 text-center"
+              className="absolute inset-0 z-[200] bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center p-12 text-center"
             >
-              <div className="absolute top-12 left-0 w-full px-8 flex justify-between items-center opacity-40">
-                <span className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.4em]">Visual Stream Connection</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping"></span>
-                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Feed_Live</span>
+              <div className="relative mb-20 scale-125">
+                <div className="absolute -inset-10 bg-emerald-500/[0.15] blur-3xl rounded-full animate-pulse"></div>
+                <div className="w-28 h-28 rounded-[40px] bg-white border border-slate-100 flex items-center justify-center relative z-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)]">
+                  {adState === 'loading' ? (
+                     <Loader2 size={48} className="text-slate-900 animate-spin" strokeWidth={3} />
+                  ) : (
+                     <PlayCircle size={48} className="text-slate-900 animate-pulse" strokeWidth={3} />
+                  )}
                 </div>
               </div>
 
-              <div className="relative mb-12">
-                <div className="absolute inset-0 bg-emerald-500/20 blur-[60px] rounded-full scale-150 animate-pulse"></div>
-                <motion.div 
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                  className="w-32 h-32 rounded-full border-2 border-emerald-500/10 border-t-emerald-500 flex items-center justify-center relative z-10"
-                >
-                  <PlayCircle size={48} className="text-emerald-500 animate-pulse" />
-                </motion.div>
-              </div>
-
-              <div className="space-y-2 mb-12 relative z-10">
-                <h3 className="text-xl font-black tracking-tight text-white uppercase font-display">
-                  {adState === 'loading' ? 'Establishing Link...' : 'Syncing Content'}
+              <div className="space-y-4 mb-20">
+                <h3 className="text-2xl font-black tracking-[0.25em] text-slate-900 uppercase italic font-display">
+                  {adState === 'loading' ? 'Syncing...' : 'Mined Link'}
                 </h3>
-                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em]">
-                  {adState === 'loading' ? 'Connecting to Ad Node' : `Remaining: ${adTimer}S`}
-                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <Timer size={16} className="text-emerald-500" />
+                  <p className="text-[12px] font-black text-slate-500 uppercase tracking-[0.3em]">
+                    {adTimer}S Remaining
+                  </p>
+                </div>
               </div>
 
-              <div className="w-full max-w-[240px] space-y-4 relative z-10">
-                <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden border border-white/5 shadow-inner">
+              <div className="w-full max-w-[260px] space-y-6">
+                <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 p-0.5 shadow-inner">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${adProgress}%` }}
-                    className="h-full bg-gradient-to-r from-emerald-500 to-blue-500"
-                  />
+                    className="h-full bg-slate-900 rounded-full shadow-sm relative overflow-hidden"
+                    transition={{ type: "tween", ease: "linear" }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
+                  </motion.div>
                 </div>
                 <div className="flex justify-between items-center px-1">
-                  <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest">Integrity</span>
-                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">{Math.round(adProgress)}% Verified</span>
+                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{Math.round(adProgress)}% SYNC</span>
+                   <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">Securing...</span>
                 </div>
               </div>
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* Refined Reward Success Popup */}
+        {/* Reward Success */}
+        <AnimatePresence>
           {adState === 'reward' && (
-            <motion.div
+            <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 z-[110] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-6"
+              className="absolute inset-0 z-[210] bg-slate-900/40 backdrop-blur-lg flex flex-col items-center justify-center p-8"
             >
-              <div className="absolute inset-0 bg-emerald-500/[0.03] ambient-glow"></div>
-              
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="glass rounded-[32px] p-6 border-white/10 text-center relative z-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col items-center max-w-[280px] w-full"
+              <div className="absolute inset-0 bg-gradient-to-b from-emerald-500/10 to-transparent pointer-events-none"></div>
+              <motion.div 
+                initial={{ scale: 0.8, y: 20, rotate: -2 }}
+                animate={{ scale: 1, y: 0, rotate: 0 }}
+                className="card rounded-[56px] p-12 border-white text-center relative z-10 flex flex-col items-center w-full max-w-[340px] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.3)]"
               >
-                {/* Minimalist Close */}
+                 <div className="w-24 h-24 rounded-[40px] bg-emerald-50 flex items-center justify-center mb-10 border border-emerald-100/50 shadow-inner-soft relative group">
+                   <div className="absolute inset-0 bg-emerald-500/10 blur-2xl rounded-full scale-150 animate-pulse"></div>
+                   <CheckCircle2 size={48} className="text-emerald-600 relative z-10 transition-transform group-hover:scale-110" strokeWidth={3} />
+                 </div>
+                
+                <h3 className="text-3xl font-black tracking-tighter text-slate-900 mb-2 uppercase italic font-display">Linked</h3>
+                <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.3em] mb-10 opacity-70">Credit Protocol Active</p>
+                
+                <div className="bg-slate-50/50 rounded-[40px] p-10 border border-slate-100/50 mb-10 w-full text-center relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-10 group-hover:opacity-20 transition-opacity"></div>
+                  <div className="text-6xl font-black text-slate-900 tabular-nums tracking-tighter relative z-10 font-display italic">+{lastReward}</div>
+                  <div className="text-[11px] font-black text-emerald-600 uppercase tracking-[0.4em] mt-4 relative z-10 bg-emerald-50 w-fit mx-auto px-4 py-1.5 rounded-full border border-emerald-100/30 shadow-sm">PEPE CREDITS</div>
+                </div>
+
                 <button 
                   onClick={() => {
                     setAdState('cooldown');
                     setCooldownRemaining(adService.AD_CONFIG.COOLDOWN_SECONDS);
                   }}
-                  className="absolute top-4 right-4 text-zinc-600 hover:text-white transition-colors"
+                  className="w-full h-18 bg-slate-900 text-white rounded-[24px] font-black text-sm uppercase tracking-[0.2em] active:scale-[0.96] transition-all shadow-2xl shadow-slate-300 hover:bg-slate-800"
                 >
-                  <X size={18} />
+                  Accept
                 </button>
-
-                 <div className="w-20 h-20 rounded-[28px] flex items-center justify-center mb-6 overflow-hidden shadow-[0_15px_30px_rgba(16,185,129,0.25)] bg-white p-3">
-                   <img 
-                     src="/logo.png" 
-                     alt="PepeTask" 
-                     className="w-full h-full object-contain"
-                     onLoad={(e) => {
-                       (e.target as HTMLImageElement).parentElement?.classList.remove('bg-white');
-                     }}
-                     onError={(e) => {
-                       (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=PepeSuccess&backgroundColor=c0ebaf';
-                     }}
-                   />
-                 </div>
-                
-                <h3 className="text-lg font-black tracking-tight text-white mb-1 font-display uppercase italic">Claim Success</h3>
-                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-6">Protocol Allocation Verified</p>
-                
-                <div className="bg-zinc-900/50 rounded-2xl p-5 border border-white/5 mb-6 w-full text-center">
-                  <div className="text-3xl font-black text-emerald-500 font-display tabular-nums">+{lastReward}</div>
-                  <div className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mt-1">PEPE_UNITS</div>
-                </div>
-
-                <motion.button 
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => {
-                    setAdState('cooldown');
-                    setCooldownRemaining(adService.AD_CONFIG.COOLDOWN_SECONDS);
-                  }}
-                  className="w-full h-12 bg-white text-black rounded-[16px] font-black text-[10px] uppercase tracking-[0.2em] shadow-lg active:scale-95 transition-all"
-                >
-                  Accept Reward
-                </motion.button>
               </motion.div>
             </motion.div>
           )}
@@ -935,57 +884,35 @@ export default function App() {
         />
 
         {showDebug && (
-          <div className="absolute inset-0 z-[200] bg-black/95 p-6 overflow-y-auto text-[10px] font-mono">
-            <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-2">
-              <span className="text-emerald-500 font-bold uppercase">System Debug Console</span>
-              <button onClick={() => setShowDebug(false)} className="text-zinc-500 hover:text-white"><X size={16} /></button>
+          <div className="absolute inset-0 z-[300] bg-white p-8 overflow-y-auto text-[11px] font-mono">
+            <div className="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+              <span className="text-slate-900 font-bold uppercase tracking-widest">Protocol Debugger</span>
+              <button onClick={() => setShowDebug(false)} className="text-slate-400 hover:text-slate-900 p-2 bg-slate-50 rounded-xl"><X size={18} /></button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <p className="text-zinc-500 mb-1">REFERRAL_DECODER</p>
-                <div className="bg-zinc-900 p-2 rounded-lg">
-                  <p>Detected ID: {referralParam || 'NONE'}</p>
-                  <p>Referred By: {profile?.referredBy || 'NULL'}</p>
-                  <p>Processed: {String(profile?.referralProcessed)}</p>
-                  <p>Source Param: {window.Telegram?.WebApp?.initDataUnsafe?.start_param || 'EMPTY'}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-zinc-500 mb-1">TELEGRAM_DATA</p>
-                <div className="bg-zinc-900 p-2 rounded-lg break-all">
-                  {JSON.stringify(user, null, 2)}
-                </div>
-              </div>
-              <div>
-                <p className="text-zinc-500 mb-1">FIRESTORE_PROFILE</p>
-                <div className="bg-zinc-900 p-2 rounded-lg break-all">
-                  {JSON.stringify(profile, null, 2)}
-                </div>
-              </div>
-              <div>
-                <p className="text-zinc-500 mb-1">APP_STATE</p>
-                <div className="bg-zinc-900 p-2 rounded-lg">
-                  <p>AdState: {adState}</p>
-                  <p>Cooldown: {cooldownRemaining}s</p>
-                  <p>Initializing: {String(isInitializing)}</p>
-                  <p>Loading: {String(loading)}</p>
-                  <p>Limit: {String(isLimitReached)}</p>
+            <div className="space-y-6">
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <p className="text-slate-400 mb-3 uppercase text-[9px] font-black tracking-widest">System Internals</p>
+                <div className="space-y-2">
+                  <p className="flex justify-between"><span>Tab:</span> <span className="text-slate-900 font-bold">{activeTab}</span></p>
+                  <p className="flex justify-between"><span>Ad State:</span> <span className="text-slate-900 font-bold">{adState}</span></p>
+                  <p className="flex justify-between"><span>Cooldown:</span> <span className="text-slate-900 font-bold">{cooldownRemaining}s</span></p>
+                  <p className="flex justify-between"><span>Daily Limit:</span> <span className="text-slate-900 font-bold">{String(isLimitReached)}</span></p>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Minimalist Tab Navigation */}
-        <nav className="shrink-0 pt-3 pb-8 px-6 bg-[#0c0c0c]/90 backdrop-blur-3xl border-t border-white/5 z-50">
-          <div className="flex items-center justify-around">
-            <NavItem icon={<LayoutDashboard size={20} />} active={activeTab === 'home'} label="Main" onClick={() => setActiveTab('home')} />
-            <NavItem icon={<Zap size={20} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
-            <NavItem icon={<Wallet size={20} />} active={activeTab === 'wallet'} label="Vault" onClick={() => setActiveTab('wallet')} />
-            <NavItem icon={<Users size={20} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
-            <NavItem icon={<UserIcon size={20} />} active={activeTab === 'profile'} label="Oper" onClick={() => setActiveTab('profile')} />
+        {/* Global Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 z-[100] px-8 pb-10 pointer-events-none sm:absolute">
+          <div className="glass rounded-[40px] p-2.5 flex items-center justify-around shadow-[0_20px_50px_rgba(0,0,0,0.15)] border-white/70 pointer-events-auto">
+            <NavItem icon={<LayoutDashboard size={22} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
+            <NavItem icon={<Zap size={22} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
+            <NavItem icon={<Wallet size={22} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
+            <NavItem icon={<Users size={22} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
+            <NavItem icon={<UserIcon size={22} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
           </div>
-        </nav>
+        </div>
       </div>
     </div>
   );

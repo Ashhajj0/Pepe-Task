@@ -16,101 +16,117 @@ interface EarnTabProps {
 
 export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaining, handleWatchAd, resetCountdown }: EarnTabProps) => {
   return (
-    <motion.div key="earn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-4 space-y-6">
+    <div className="px-6 py-10 space-y-10 pb-36 min-h-full ambient-glow no-scrollbar overflow-y-auto">
       <div>
-        <h2 className="text-xl font-bold tracking-tight mb-1 font-display">Hub</h2>
-        <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]">Rewards & Social</p>
+        <h2 className="text-3xl font-black tracking-tighter text-slate-900 font-display italic uppercase">Earn</h2>
+        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-2 opacity-60">Extraction Protocol Active</p>
       </div>
       
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.25em]">Visual Protocol</span>
-          <motion.button
-            whileTap={(!isLimitReached && adState === 'idle') ? { scale: 0.98 } : {}}
-            onClick={handleWatchAd}
-            disabled={isLimitReached || adState !== 'idle'}
-            className={`w-full rounded-[24px] p-6 flex items-center justify-between shadow-[0_20px_40px_rgba(16,185,129,0.2)] relative overflow-hidden group transition-all duration-300 ${
-              isLimitReached 
-              ? 'bg-zinc-800 opacity-50 cursor-not-allowed' 
-              : adState === 'cooldown'
-                ? 'bg-zinc-900 border border-emerald-500/10'
-                : 'bg-gradient-to-br from-emerald-500 to-emerald-600'
-            }`}
-          >
-            <div className="flex items-center gap-4 relative z-10">
-              <div className={`w-12 h-12 glass rounded-2xl flex items-center justify-center ${adState === 'cooldown' ? 'text-emerald-500' : 'bg-black/20 text-white'}`}>
-                {adState === 'cooldown' ? <Timer size={24} /> : <PlayCircle size={24} />}
-              </div>
-              <div className="text-left">
-                <span className={`text-[10px] font-black uppercase tracking-widest block mb-0.5 ${adState === 'cooldown' ? 'text-zinc-500' : 'text-black/40'}`}>
-                  {adState === 'cooldown' ? 'Cooldown Active' : 'Stream Bonus'}
-                </span>
-                <span className={`text-lg font-black tracking-tight leading-none uppercase ${adState === 'cooldown' ? 'text-zinc-300' : 'text-black'}`}>
-                  {adState === 'cooldown' ? `${cooldownRemaining}s Wait` : '+0-100 PEPE'}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col items-end relative z-10">
-              <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${
-                isLimitReached 
-                ? 'bg-zinc-900 text-zinc-600' 
-                : adState === 'cooldown'
-                  ? 'bg-emerald-500/10 text-emerald-500'
-                  : 'bg-black/10 text-black'
-              }`}>
-                {isLimitReached ? 'Locked' : adState === 'cooldown' ? 'Wait' : 'Watch Now'}
-              </span>
-            </div>
-            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          </motion.button>
+      <div className="space-y-10">
+        <div className="space-y-5">
           <div className="flex justify-between items-center px-1">
-            <span className={`text-[9px] font-bold uppercase tracking-widest ${isLimitReached ? 'text-red-500' : 'text-zinc-600'}`}>
-              {isLimitReached ? 'Daily Limit Reached' : 'Daily Consensus Limit'}
-            </span>
-            <span className={`text-[10px] font-black ${isLimitReached ? 'text-red-500' : 'text-emerald-500/80'}`}>{safeNumber(profile?.adsWatchedToday)} / 15</span>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em]">Main Node</span>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-100/50 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">Active Link</span>
+            </div>
           </div>
 
+          <button
+            onClick={handleWatchAd}
+            disabled={isLimitReached || adState !== 'idle'}
+            className={`w-full relative group rounded-[40px] p-10 flex flex-col items-center gap-8 transition-all duration-500 border-2 ${
+              isLimitReached 
+              ? 'bg-slate-50 border-slate-100' 
+              : adState === 'cooldown'
+                ? 'bg-slate-50 border-emerald-50'
+                : 'bg-slate-900 border-slate-800 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.15)] active:scale-[0.96]'
+            }`}
+          >
+            {adState === 'idle' && !isLimitReached && (
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[40px]"></div>
+            )}
+            
+            <div className={`w-20 h-20 rounded-[32px] flex items-center justify-center transition-all duration-500 relative ${
+              adState === 'cooldown' || isLimitReached 
+              ? 'bg-slate-200 text-slate-400' 
+              : 'bg-white/10 text-emerald-400 border border-white/5 shadow-inner'
+            }`}>
+              {adState === 'cooldown' ? (
+                <Timer size={32} className="opacity-60" />
+              ) : (
+                <>
+                  <PlayCircle size={32} className="relative z-10" />
+                  {!isLimitReached && <div className="absolute inset-0 bg-emerald-500/20 blur-xl rounded-full animate-pulse"></div>}
+                </>
+              )}
+            </div>
+
+            <div className="text-center space-y-2">
+              <span className={`text-[11px] font-black uppercase tracking-[0.3em] block ${
+                adState === 'cooldown' || isLimitReached ? 'text-slate-400' : 'text-emerald-500/80'
+              }`}>
+                {adState === 'cooldown' ? 'Syncing...' : 'Direct Allocation'}
+              </span>
+              <span className={`text-4xl font-black leading-none font-display tracking-tighter ${
+                adState === 'cooldown' || isLimitReached ? 'text-slate-500' : 'text-white'
+              }`}>
+                {adState === 'cooldown' ? `${cooldownRemaining}s` : '100 PEPE'}
+              </span>
+            </div>
+            
+            <div className={`text-[11px] font-black uppercase tracking-[0.2em] px-8 py-3.5 rounded-2xl relative z-10 transition-all ${
+              isLimitReached 
+              ? 'bg-slate-200 text-slate-400' 
+              : adState === 'cooldown'
+                ? 'bg-slate-200 text-slate-400'
+                : 'bg-emerald-500 text-white shadow-xl shadow-emerald-500/20 group-hover:scale-105'
+            }`}>
+              {isLimitReached ? 'Daily Limit' : adState === 'cooldown' ? 'Buffer' : 'Initiate Extract'}
+            </div>
+          </button>
+          
           {isLimitReached && resetCountdown && (
             <motion.div 
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-4 glass p-4 rounded-[20px] border-emerald-500/10 flex flex-col items-center gap-2"
+              className="card p-8 rounded-[40px] flex flex-col items-center gap-6 bg-slate-50/30 border-white/10 shadow-inner-soft"
             >
-              <span className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.3em]">Protocol Reset Window</span>
-              <div className="flex gap-3">
-                <TimerDisplay label="HH" value={resetCountdown.hours} />
-                <TimerDisplay label="MM" value={resetCountdown.minutes} />
-                <TimerDisplay label="SS" value={resetCountdown.seconds} />
+              <div className="flex items-center gap-3">
+                <Timer size={14} className="text-slate-400" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Node Refresh In</span>
+              </div>
+              <div className="flex gap-8">
+                <TimerDisplay label="H" value={resetCountdown.hours} />
+                <TimerDisplay label="M" value={resetCountdown.minutes} />
+                <TimerDisplay label="S" value={resetCountdown.seconds} />
               </div>
             </motion.div>
           )}
         </div>
 
-        <div className="space-y-3">
-          <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.25em]">Network Expansion</span>
-          <div className="space-y-3">
+        <div className="space-y-6 pt-2">
+          <div className="flex items-center gap-3 px-1">
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Protocol Bounties</span>
+            <div className="h-px flex-1 bg-slate-100"></div>
+          </div>
+          <div className="space-y-4">
              <SocialTask 
-              icon={<Users size={18} />} 
-              title="Main Telegram Channel" 
-              reward="+50.00" 
-              actionLabel="Join"
+              icon={<Users size={20} />} 
+              title="Official Network" 
+              reward="+50" 
+              actionLabel="Sync"
              />
              <SocialTask 
-              icon={<Users size={18} />} 
-              title="Community Group" 
-              reward="+50.00" 
-              actionLabel="Link"
-             />
-             <SocialTask 
-              icon={<ArrowUpRight size={18} />} 
-              title="X News Terminal" 
-              reward="+35.00" 
-              actionLabel="Follow"
+              icon={<ArrowUpRight size={20} />} 
+              title="X / Twitter Feed" 
+              reward="+25" 
+              actionLabel="Sync"
              />
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 });
 

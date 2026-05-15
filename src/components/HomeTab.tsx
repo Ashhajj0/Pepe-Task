@@ -1,10 +1,9 @@
 import { motion } from 'motion/react';
-import { memo, useMemo } from 'react';
+import { memo } from 'react';
 import { UserProfile, TelegramUser } from '../types';
-import { Counter, ProfileRow } from './UIElements';
+import { Counter } from './UIElements';
 import { safeNumber, safeString } from '../lib/utils/firestore';
-import { Trophy, Users, TrendingUp, Gem, Info } from 'lucide-react';
-import * as currencyService from '../services/currencyService';
+import { Trophy, Activity, Gem, ChevronRight } from 'lucide-react';
 
 interface HomeTabProps {
   user: TelegramUser | null;
@@ -18,174 +17,158 @@ interface HomeTabProps {
 
 export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, dailyProgress, userRank, handleClaimLevelBonus }: HomeTabProps) => {
   return (
-    <motion.div 
-      initial={{ opacity: 0 }} 
-      animate={{ opacity: 1 }} 
-      exit={{ opacity: 0 }} 
-      className="px-5 pt-2 space-y-5"
-    >
-      {/* User Identity */}
-      <div className="glass p-4 rounded-[28px] flex items-center gap-4 border-white/5">
-        <div className="w-12 h-12 rounded-[14px] border border-white/10 p-0.5 bg-zinc-900 overflow-hidden">
-          <img 
-            src={user?.photo_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.id}`} 
-            alt="Operator" 
-            className="rounded-[12px] w-full h-full object-cover" 
-          />
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-bold truncate tracking-tight">{user?.first_name}</h2>
-          <div className="flex items-center gap-2 mt-0.5">
-            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{safeNumber(profile?.trustScore)}% Trust</span>
-            <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest truncate">@{safeString(user?.username) || 'pepe_user'}</span>
+    <div className="px-6 py-10 space-y-10 min-h-full ambient-glow no-scrollbar overflow-y-auto">
+      {/* Hero Balance Section */}
+      <div className="flex flex-col items-center justify-center pt-6 pb-2 space-y-4">
+        <motion.span 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 0.5, y: 0 }}
+          className="text-[10px] font-black tracking-[0.5em] text-slate-400 uppercase"
+        >
+          System Liquidity
+        </motion.span>
+        
+        <div className="relative group text-center py-4">
+          <div className="absolute -inset-16 bg-emerald-500/10 blur-[100px] rounded-full scale-150 group-hover:bg-emerald-500/15 transition-all duration-1000"></div>
+          <div className="flex items-baseline justify-center gap-1.5 relative">
+            <h2 className="text-8xl font-black tracking-tighter text-slate-900 drop-shadow-xl font-display selection:bg-emerald-100">
+              <Counter value={profile?.balance || 0} />
+            </h2>
           </div>
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+            className="flex items-center justify-center gap-2 mt-2"
+          >
+            <span className="text-[10px] font-black text-emerald-500/80 font-display tracking-[0.3em] uppercase">PEPE TOTAL UNITS</span>
+          </motion.div>
         </div>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.3 }}
+          className="flex items-center gap-2.5 px-5 py-2.5 rounded-2xl glass border-white/60 shadow-xl shadow-slate-200/50 mt-6"
+        >
+          <div className="relative">
+            <span className="block w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span className="absolute inset-0 rounded-full bg-emerald-500 animate-ping opacity-40"></span>
+          </div>
+          <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest tabular-nums">
+            {currencyDisplay?.rate ? (
+              `${currencyDisplay.symbol}${(profile?.balance || 0) * (currencyDisplay?.rate || 0)}`
+            ) : currencyDisplay.formatted} 
+            <span className="ml-1.5 text-slate-400 opacity-60">VALUATION</span>
+          </span>
+        </motion.div>
       </div>
 
-      {/* Balance Card */}
-      <div className="relative">
-        <div className="absolute inset-0 bg-emerald-500/[0.03] blur-[40px] rounded-full pointer-events-none"></div>
-        <div className="relative glass-neon rounded-[36px] p-6 shimmer overflow-hidden border-white/5">
-          <div className="flex justify-between items-start mb-6">
-            <div className="flex flex-col">
-              <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-600 mb-1">Balance</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-black tracking-tight tabular-nums font-display leading-none text-white">
-                  <Counter value={profile?.balance ?? 0} />
-                </span>
-                <span className="text-[10px] font-black text-emerald-500 tracking-widest uppercase">PEPE</span>
-              </div>
-              <div className="flex items-center gap-1.5 mt-2">
-                <span className="text-xs font-bold text-zinc-400">{currencyDisplay.formatted}</span>
-                <span className="text-[8px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">LIVE</span>
-              </div>
-            </div>
-            <div className="w-10 h-10 rounded-xl glass-neon flex items-center justify-center border border-emerald-500/20">
-              <TrendingUp size={16} className="text-emerald-500" />
-            </div>
+      {/* Grid Stats */}
+      <div className="grid grid-cols-2 gap-5">
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="card rounded-[32px] p-7 relative overflow-hidden group border-white/10"
+        >
+          <div className="absolute -top-2 -right-2 p-6 opacity-[0.04] group-hover:opacity-[0.08] transition-all duration-500 rotate-12 group-hover:rotate-0">
+            <Trophy size={56} className="text-slate-900" />
           </div>
-          
-          <div className="h-px bg-white/5 w-full mb-6"></div>
-
-          <div className="grid grid-cols-2 gap-y-5 gap-x-4">
-            <div className="flex flex-col space-y-1">
-              <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">User Level</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-zinc-200 shrink-0">LVL {safeNumber(profile?.level, 1)}</span>
-                <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden mt-0.5">
-                  <motion.div 
-                    className="h-full bg-blue-500"
-                    initial={false}
-                    animate={{ width: `${levelProgress}%` }}
-                    transition={{ duration: 0.3 }}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="flex flex-col space-y-1 pl-4 border-l border-white/5">
-              <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">Daily Load</span>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${dailyProgress}%` }}></div>
-                </div>
-                <span className="text-[9px] font-black text-zinc-400">{safeNumber(profile?.adsWatchedToday)}/15</span>
-              </div>
-            </div>
-            <div className="flex flex-col space-y-1">
-              <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">Total Refers</span>
-              <span className="text-xs font-bold text-zinc-200">{safeNumber(profile?.referCount)}</span>
-            </div>
-            <div className="flex flex-col space-y-1 pl-4 border-l border-white/5">
-              <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">Total Earning</span>
-              <div className="flex items-center gap-1 text-xs font-bold text-emerald-500">
-                <span>{safeNumber(profile?.totalEarned).toLocaleString()}</span>
-                <Gem size={8} />
-              </div>
-            </div>
+          <div className="flex flex-col relative z-10">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 leading-none opacity-70">Global Rank</span>
+            <span className="text-3xl font-black text-slate-900 font-display tracking-tight">#{userRank}</span>
           </div>
-        </div>
+        </motion.div>
+        
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="card rounded-[32px] p-7 relative overflow-hidden group border-white/10"
+        >
+          <div className="absolute -top-2 -right-2 p-6 opacity-[0.04] group-hover:opacity-[0.08] transition-all duration-500 -rotate-12 group-hover:rotate-0">
+            <Gem size={56} className="text-slate-900" />
+          </div>
+          <div className="flex flex-col relative z-10">
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3 leading-none opacity-70">Node Tier</span>
+            <span className="text-3xl font-black text-slate-900 font-display tracking-tight">LVL {profile?.level || 1}</span>
+          </div>
+        </motion.div>
       </div>
 
-      {/* Level Rewards Section */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Level Progression</h3>
-          <div className="h-px w-10 bg-zinc-900/50"></div>
-        </div>
-        <div className="glass rounded-[24px] p-5 border-white/5 relative overflow-hidden bg-gradient-to-br from-emerald-500/[0.03] to-transparent">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl glass-neon flex items-center justify-center border border-emerald-500/20">
-                <Trophy size={18} className="text-emerald-500" />
-              </div>
-              <div>
-                <h4 className="text-[11px] font-black text-white uppercase tracking-tight">Level {profile?.level} Rewards</h4>
-                <p className="text-[9px] font-medium text-zinc-500">Reach levels to unlock bonuses</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] font-black text-emerald-500 block">+500 PEPE</span>
-              <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-widest">Per Level</span>
-            </div>
+      {/* Progress Card */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="card rounded-[40px] p-8 space-y-7 relative overflow-hidden border-white/10"
+      >
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <h3 className="text-xs font-black text-slate-900 uppercase tracking-[0.15em]">Extraction Efficiency</h3>
+            <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-1.5 opacity-60">Protocol Health Status</span>
           </div>
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 shadow-inner-soft">
+            <Activity size={20} />
+          </div>
+        </div>
 
-          <div className="space-y-4">
-            <div className="glass bg-black/20 rounded-2xl p-4 border border-white/5">
-              <div className="flex items-center justify-between mb-2">
-                 <span className="text-[10px] font-bold text-zinc-400 italic">
-                   { (profile?.level || 1) < 2
-                     ? "Unlocks at Level 2"
-                     : (profile?.lastClaimedLevel || 0) < (profile?.level || 1) 
-                       ? "New Level Bonus Ready!" 
-                       : `Next Bonus: Level ${(profile?.level || 1) + 1}` }
-                 </span>
-                 <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
-                   { (profile?.level || 1) >= 2 && (profile?.lastClaimedLevel || 0) < (profile?.level || 1) 
-                     ? "Unlocked" 
-                     : "Locked" }
-                 </span>
-              </div>
-              
-              <button 
-                onClick={handleClaimLevelBonus}
-                disabled={(profile?.level || 1) < 2 || (profile?.lastClaimedLevel || 0) >= (profile?.level || 1)}
-                className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 ${
-                  (profile?.level || 1) >= 2 && (profile?.lastClaimedLevel || 0) < (profile?.level || 1)
-                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 active:scale-95'
-                  : 'bg-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'
-                }`}
-              >
-                { (profile?.level || 1) < 2 
-                  ? 'Locked' 
-                  : (profile?.lastClaimedLevel || 0) < (profile?.level || 1) 
-                    ? 'Claim 500 Bonus' 
-                    : 'Bonus Claimed' }
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2 px-1">
-              <Info size={10} className="text-zinc-700" />
-              <span className="text-[8px] text-zinc-700 font-black uppercase tracking-widest leading-none">
-                Earn 500 PEPE bonus every time you advance to a new level (Starts from Level 2).
+        <div className="space-y-7">
+          <div className="space-y-3">
+            <div className="flex justify-between items-end px-1">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Daily Quota</span>
+              <span className="text-[10px] font-black text-slate-900 tabular-nums">
+                {safeNumber(profile?.adsWatchedToday, 0)} <span className="text-slate-200 mx-1">|</span> 15
               </span>
             </div>
+            <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 shadow-inner-soft p-0.5">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${(safeNumber(profile?.adsWatchedToday, 0) / 15) * 100}%` }}
+                className="h-full bg-slate-900 rounded-full shadow-sm"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-end px-1">
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Next Milestone</span>
+              <span className="text-[10px] font-black text-emerald-600 tabular-nums">{Math.round(levelProgress)}%</span>
+            </div>
+            <div className="h-3 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 shadow-inner-soft p-0.5">
+              <motion.div 
+                initial={{ width: 0 }}
+                animate={{ width: `${levelProgress}%` }}
+                className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full shadow-sm"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="glass p-5 rounded-[28px] border-white/5 flex flex-col items-center text-center">
-          <Trophy size={16} className="text-zinc-500 mb-3" />
-          <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Rank_Score</span>
-          <span className="text-base font-black text-zinc-200 font-display">#{userRank}</span>
+      {/* Action Button */}
+      { (profile?.level || 1) >= 2 && (profile?.lastClaimedLevel || 0) < (profile?.level || 1) && (
+        <div className="relative pt-2 pb-6">
+          <div className="absolute -inset-2 bg-emerald-500/20 blur-2xl rounded-[40px] animate-pulse"></div>
+          <button 
+            onClick={handleClaimLevelBonus}
+            className="w-full relative h-20 card hover:bg-slate-50 rounded-[28px] transition-all active:scale-[0.97] flex items-center justify-between px-8 group border-emerald-50"
+          >
+            <div className="flex items-center gap-5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30">
+                <Trophy size={22} fill="currentColor" />
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-[12px] font-black text-slate-900 uppercase tracking-tight">Promotion Bonus</span>
+                <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-0.5">Reward Dispatch Pending</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-black text-emerald-600 text-[10px] tracking-[0.2em] uppercase">CLAIM</span>
+              <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center">
+                <ChevronRight size={14} className="text-emerald-500" />
+              </div>
+            </div>
+          </button>
         </div>
-        <div className="glass p-5 rounded-[28px] border-white/5 flex flex-col items-center text-center">
-          <Users size={16} className="text-zinc-500 mb-3" />
-          <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Active_Nodes</span>
-          <span className="text-base font-black text-zinc-200 font-display">{safeNumber(profile?.referCount).toLocaleString()}</span>
-        </div>
-      </div>
-    </motion.div>
+      )}
+    </div>
   );
 });
 
