@@ -18,6 +18,11 @@ import { PepePriceTicker } from './components/PepePriceTicker';
 import { CurrencyModal } from './components/CurrencyModal';
 import { ReferralPanel } from './components/ReferralPanel';
 import { Currency } from './services/currencyService';
+import { Counter, TimerDisplay, SocialTask, ProfileRow, NavItem } from './components/UIElements';
+import { HomeTab } from './components/HomeTab';
+import { EarnTab } from './components/EarnTab';
+import { WalletTab } from './components/WalletTab';
+import { ProfileTab } from './components/ProfileTab';
 
 type Tab = 'home' | 'earn' | 'wallet' | 'friends' | 'profile';
 
@@ -99,6 +104,44 @@ export default function App() {
     return () => clearInterval(interval);
   }, [profile?.preferredCurrency]);
 
+  // Memoized derived values for performance
+  const currencyDisplay = useMemo(() => {
+    if (!profile) return { symbol: '$', rate: 0.000008, formatted: '$0.00' };
+    const curr = profile.preferredCurrency || 'pepe';
+    const isPepe = curr === 'pepe';
+    
+    if (isPepe) {
+      return { 
+        symbol: '$', 
+        rate: pepePrice || 0.000008, 
+        formatted: `≈ $${((safeNumber(profile.balance)) * (pepePrice || 0.000008)).toFixed(4)} USD` 
+      };
+    }
+
+    const currencyInfo = currencyService.POPULAR_CURRENCIES.find(c => c.id === curr);
+    const symbol = currencyInfo?.symbol || curr.toUpperCase();
+    const rate = pepePrice || 0;
+    const converted = (safeNumber(profile.balance)) * rate;
+    
+    return {
+      symbol,
+      rate,
+      formatted: `≈ ${symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${curr.toUpperCase()}`
+    };
+  }, [profile?.balance, profile?.preferredCurrency, pepePrice]);
+
+  const dailyProgress = useMemo(() => {
+    return (safeNumber(profile?.adsWatchedToday) / 15) * 100;
+  }, [profile?.adsWatchedToday]);
+
+  const levelProgress = useMemo(() => {
+    return safeNumber(profile?.levelProgress);
+  }, [profile?.levelProgress]);
+
+  const userRank = useMemo(() => {
+    return Math.max(1, 2000 - safeNumber(profile?.totalEarned) / 100).toLocaleString();
+  }, [profile?.totalEarned]);
+
   useEffect(() => {
     const initApp = async () => {
       logger.log('Init', 'Starting application bootstrap...');
@@ -109,7 +152,7 @@ export default function App() {
       // Safety timeout for loading screen
       const loadingTimeout = setTimeout(() => {
         if (loadingRef.current) {
-          logger.error('Init', 'Startup timed out after 15s. Forcing bypass.');
+          logger.error('Init', 'Startup timed out after 15s. For bypass.');
           setLoading(false);
           setIsInitializing(false);
         }
@@ -224,14 +267,17 @@ export default function App() {
       if (docSnap.exists()) {
         const data = docSnap.data() as UserProfile;
         
-        // Update state and cache
+        // Update state and cache - Optimized equality check
         setProfile((prev) => {
           if (
             prev && 
             prev.balance === data.balance && 
             prev.referCount === data.referCount && 
             prev.totalReferrals === data.totalReferrals &&
-            prev.level === data.level
+            prev.level === data.level &&
+            prev.preferredCurrency === data.preferredCurrency &&
+            prev.xp === data.xp &&
+            prev.adsWatchedToday === data.adsWatchedToday
           ) {
             return prev;
           }
@@ -710,423 +756,33 @@ export default function App() {
         <main className="flex-1 overflow-y-auto no-scrollbar pb-24 touch-pan-y overscroll-contain">
           <AnimatePresence mode="wait">
             {activeTab === 'home' && (
-              <motion.div 
-                key="home" 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                className="px-5 pt-2 space-y-5"
-              >
-                {/* Compact User Identity */}
-                <div className="glass p-4 rounded-[28px] flex items-center gap-4 border-white/5">
-                  <div className="w-12 h-12 rounded-[14px] border border-white/10 p-0.5 bg-zinc-900 overflow-hidden">
-                    <img 
-                      src={user?.photo_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.id}`} 
-                      alt="Operator" 
-                      className="rounded-[12px] w-full h-full object-cover" 
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h2 className="text-sm font-bold truncate tracking-tight">{user?.first_name}</h2>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{safeNumber(profile?.trustScore)}% Trust</span>
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest truncate">@{safeString(user?.username) || 'pepe_user'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Concentrated Balance Card - Upgraded */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-emerald-500/[0.03] blur-[40px] rounded-full pointer-events-none"></div>
-                  <div className="relative glass-neon rounded-[36px] p-6 shimmer overflow-hidden border-white/5">
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-[0.25em] text-zinc-600 mb-1">Balance</span>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-3xl font-black tracking-tight tabular-nums font-display leading-none text-white">
-                            <Counter value={profile?.balance ?? 0} />
-                          </span>
-                          <span className="text-[10px] font-black text-emerald-500 tracking-widest uppercase">
-                            PEPE
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 mt-2">
-                          <span className="text-xs font-bold text-zinc-400">
-                             {profile?.preferredCurrency && profile.preferredCurrency !== 'pepe' 
-                               ? `≈ ${currencyService.POPULAR_CURRENCIES.find(c => c.id === profile.preferredCurrency)?.symbol || ''}${((safeNumber(profile?.balance)) * (pepePrice || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${profile.preferredCurrency.toUpperCase()}`
-                               : `≈ $${((safeNumber(profile?.balance)) * (pepePrice || 0.000008)).toFixed(4)} USD`}
-                          </span>
-                          <span className="text-[8px] font-black text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded-md">LIVE</span>
-                        </div>
-                      </div>
-                      <div className="w-10 h-10 rounded-xl glass-neon flex items-center justify-center border border-emerald-500/20">
-                        <TrendingUp size={16} className="text-emerald-500" />
-                      </div>
-                    </div>
-                    
-                    <div className="h-px bg-white/5 w-full mb-6"></div>
-
-                    <div className="grid grid-cols-2 gap-y-5 gap-x-4">
-                      <div className="flex flex-col space-y-1">
-                        <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">User Level</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-zinc-200 shrink-0">LVL {safeNumber(profile?.level, 1)}</span>
-                          <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden mt-0.5">
-                            <motion.div 
-                              className="h-full bg-blue-500"
-                              initial={{ width: 0 }}
-                              animate={{ width: `${safeNumber(profile?.levelProgress)}%` }}
-                              transition={{ duration: 0.5 }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex flex-col space-y-1 pl-4 border-l border-white/5">
-                        <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">Daily Load</span>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-1 bg-zinc-900 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 transition-all duration-300" style={{ width: `${(safeNumber(profile?.adsWatchedToday) / 15) * 100}%` }}></div>
-                          </div>
-                          <span className="text-[9px] font-black text-zinc-400">{safeNumber(profile?.adsWatchedToday)}/15</span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col space-y-1">
-                        <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">Total Refers</span>
-                        <span className="text-xs font-bold text-zinc-200">{safeNumber(profile?.referCount)}</span>
-                      </div>
-                      <div className="flex flex-col space-y-1 pl-4 border-l border-white/5">
-                        <span className="text-[7px] font-black text-zinc-600 uppercase tracking-[0.15em]">Total Earning</span>
-                        <div className="flex items-center gap-1 text-xs font-bold text-emerald-500">
-                          <span>{safeNumber(profile?.totalEarned).toLocaleString()}</span>
-                          <Gem size={8} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* System Monitor (Replaces Earning on Main) */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between px-1">
-                    <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Protocol Status</h3>
-                    <div className="h-px w-24 bg-zinc-900/50"></div>
-                  </div>
-                  
-                  <div className="glass p-4 rounded-[24px] border-white/5 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-500/5 flex items-center justify-center">
-                          <Activity size={14} className="text-emerald-500" />
-                        </div>
-                        <span className="text-[11px] font-bold text-zinc-300">Global Consensus</span>
-                      </div>
-                      <span className="text-[10px] font-black text-emerald-500">OPTIMIZED</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
-                          <ShieldCheck size={14} className="text-zinc-500" />
-                        </div>
-                        <span className="text-[11px] font-bold text-zinc-300">Vault Defense</span>
-                      </div>
-                      <span className="text-[10px] font-black text-zinc-500 uppercase">Lvl_04 Active</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Network Statistics Update */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="glass p-5 rounded-[28px] border-white/5 flex flex-col items-center text-center">
-                    <Trophy size={16} className="text-zinc-500 mb-3" />
-                    <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Rank_Score</span>
-                    <span className="text-base font-black text-zinc-200 font-display">#{Math.max(1, 2000 - safeNumber(profile?.totalEarned) / 100).toLocaleString()}</span>
-                  </div>
-                  <div className="glass p-5 rounded-[28px] border-white/5 flex flex-col items-center text-center">
-                    <Users size={16} className="text-zinc-500 mb-3" />
-                    <span className="text-[8px] font-black text-zinc-600 uppercase tracking-widest block mb-1">Active_Nodes</span>
-                    <span className="text-base font-black text-zinc-200 font-display">{safeNumber(profile?.referCount).toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Level Rewards Section */}
-                <div className="space-y-3">
-                   <div className="flex items-center justify-between px-1">
-                    <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Level Progression</h3>
-                    <div className="h-px w-10 bg-zinc-900/50"></div>
-                  </div>
-                  <div className="glass rounded-[24px] p-5 border-white/5 relative overflow-hidden bg-gradient-to-br from-emerald-500/[0.03] to-transparent">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl glass-neon flex items-center justify-center border border-emerald-500/20">
-                          <Trophy size={18} className="text-emerald-500" />
-                        </div>
-                        <div>
-                          <h4 className="text-[11px] font-black text-white uppercase tracking-tight">Level {profile?.level} Rewards</h4>
-                          <p className="text-[9px] font-medium text-zinc-500">Reach levels to unlock bonuses</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] font-black text-emerald-500 block">+500 PEPE</span>
-                        <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-widest">Per Level</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="glass bg-black/20 rounded-2xl p-4 border border-white/5">
-                        <div className="flex items-center justify-between mb-2">
-                           <span className="text-[10px] font-bold text-zinc-400 italic">
-                             { (profile?.level || 1) < 2
-                               ? "Unlocks at Level 2"
-                               : (profile?.lastClaimedLevel || 0) < (profile?.level || 1) 
-                                 ? "New Level Bonus Ready!" 
-                                 : `Next Bonus: Level ${(profile?.level || 1) + 1}` }
-                           </span>
-                           <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">
-                             { (profile?.level || 1) >= 2 && (profile?.lastClaimedLevel || 0) < (profile?.level || 1) 
-                               ? "Unlocked" 
-                               : "Locked" }
-                           </span>
-                        </div>
-                        
-                        <button 
-                          onClick={handleClaimLevelBonus}
-                          disabled={(profile?.level || 1) < 2 || (profile?.lastClaimedLevel || 0) >= (profile?.level || 1)}
-                          className={`w-full py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-300 ${
-                            (profile?.level || 1) >= 2 && (profile?.lastClaimedLevel || 0) < (profile?.level || 1)
-                            ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 active:scale-95'
-                            : 'bg-zinc-800 text-zinc-600 opacity-50 cursor-not-allowed'
-                          }`}
-                        >
-                          { (profile?.level || 1) < 2 
-                            ? 'Locked' 
-                            : (profile?.lastClaimedLevel || 0) < (profile?.level || 1) 
-                              ? 'Claim 500 Bonus' 
-                              : 'Bonus Claimed' }
-                        </button>
-                      </div>
-
-                      <div className="flex items-center gap-2 px-1">
-                        <Info size={10} className="text-zinc-700" />
-                        <span className="text-[8px] text-zinc-700 font-black uppercase tracking-widest leading-none">
-                          Earn 500 PEPE bonus every time you advance to a new level (Starts from Level 2).
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-              </motion.div>
+              <HomeTab 
+                user={user}
+                profile={profile}
+                currencyDisplay={currencyDisplay}
+                levelProgress={levelProgress}
+                dailyProgress={dailyProgress}
+                userRank={userRank}
+                handleClaimLevelBonus={handleClaimLevelBonus}
+              />
             )}
 
             {activeTab === 'earn' && (
-              <motion.div key="earn" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-4 space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight mb-1 font-display">Hub</h2>
-                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-[0.2em]">Rewards & Social</p>
-                </div>
-                
-                <div className="space-y-6">
-                  {/* Reward Stream - Simplified */}
-                  <div className="space-y-3">
-                    <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.25em]">Visual Protocol</span>
-                    <motion.button
-                      whileTap={(!isLimitReached && adState === 'idle') ? { scale: 0.98 } : {}}
-                      onClick={handleWatchAd}
-                      disabled={isLimitReached || adState !== 'idle'}
-                      className={`w-full rounded-[24px] p-6 flex items-center justify-between shadow-[0_20px_40px_rgba(16,185,129,0.2)] relative overflow-hidden group transition-all duration-300 ${
-                        isLimitReached 
-                        ? 'bg-zinc-800 opacity-50 cursor-not-allowed' 
-                        : adState === 'cooldown'
-                          ? 'bg-zinc-900 border border-emerald-500/10'
-                          : 'bg-gradient-to-br from-emerald-500 to-emerald-600'
-                      }`}
-                    >
-                      <div className="flex items-center gap-4 relative z-10">
-                        <div className={`w-12 h-12 glass rounded-2xl flex items-center justify-center ${adState === 'cooldown' ? 'text-emerald-500' : 'bg-black/20 text-white'}`}>
-                          {adState === 'cooldown' ? <Timer size={24} /> : <PlayCircle size={24} />}
-                        </div>
-                        <div className="text-left">
-                          <span className={`text-[10px] font-black uppercase tracking-widest block mb-0.5 ${adState === 'cooldown' ? 'text-zinc-500' : 'text-black/40'}`}>
-                            {adState === 'cooldown' ? 'Cooldown Active' : 'Stream Bonus'}
-                          </span>
-                          <span className={`text-lg font-black tracking-tight leading-none uppercase ${adState === 'cooldown' ? 'text-zinc-300' : 'text-black'}`}>
-                            {adState === 'cooldown' ? `${cooldownRemaining}s Wait` : '+0-100 PEPE'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end relative z-10">
-                        <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg ${
-                          isLimitReached 
-                          ? 'bg-zinc-900 text-zinc-600' 
-                          : adState === 'cooldown'
-                            ? 'bg-emerald-500/10 text-emerald-500'
-                            : 'bg-black/10 text-black'
-                        }`}>
-                          {isLimitReached ? 'Locked' : adState === 'cooldown' ? 'Wait' : 'Watch Now'}
-                        </span>
-                      </div>
-                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                    </motion.button>
-                    <div className="flex justify-between items-center px-1">
-                      <span className={`text-[9px] font-bold uppercase tracking-widest ${isLimitReached ? 'text-red-500' : 'text-zinc-600'}`}>
-                        {isLimitReached ? 'Daily Limit Reached' : 'Daily Consensus Limit'}
-                      </span>
-                      <span className={`text-[10px] font-black ${isLimitReached ? 'text-red-500' : 'text-emerald-500/80'}`}>{safeNumber(profile?.adsWatchedToday)} / 15</span>
-                    </div>
-
-                    {isLimitReached && resetCountdown && (
-                      <motion.div 
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 glass p-4 rounded-[20px] border-emerald-500/10 flex flex-col items-center gap-2"
-                      >
-                        <span className="text-[8px] font-black text-zinc-500 uppercase tracking-[0.3em]">Protocol Reset Window</span>
-                        <div className="flex gap-3">
-                          <TimerDisplay label="HH" value={resetCountdown.hours} />
-                          <TimerDisplay label="MM" value={resetCountdown.minutes} />
-                          <TimerDisplay label="SS" value={resetCountdown.seconds} />
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-
-                  {/* Social Logic */}
-                  <div className="space-y-3">
-                    <span className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.25em]">Network Expansion</span>
-                    <div className="space-y-3">
-                       <SocialTask 
-                        icon={<Users size={18} />} 
-                        title="Main Telegram Channel" 
-                        reward="+50.00" 
-                        actionLabel="Join"
-                       />
-                       <SocialTask 
-                        icon={<Users size={18} />} 
-                        title="Community Group" 
-                        reward="+50.00" 
-                        actionLabel="Link"
-                       />
-                       <SocialTask 
-                        icon={<ArrowUpRight size={18} />} 
-                        title="X News Terminal" 
-                        reward="+35.00" 
-                        actionLabel="Follow"
-                       />
-                    </div>
-                  </div>
-
-                  {/* How It Works Section */}
-                  <div className="pt-4 space-y-4">
-                    <div className="flex items-center justify-between px-1">
-                      <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Protocol Intelligence</h3>
-                      <div className="h-px flex-1 bg-zinc-900/50 ml-4"></div>
-                    </div>
-                    <div className="glass rounded-[28px] p-6 border-white/5 bg-zinc-950/20 space-y-6">
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                          <h4 className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">How it Works</h4>
-                        </div>
-                        <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
-                          PepeTask operates as a decentralized attention marketplace where user engagement is directly converted into protocol credits.
-                        </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                          <h4 className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Sustainability</h4>
-                        </div>
-                        <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
-                          The system is powered by verified visual feeds. Revenue generated from these feeds is redistributed to active node operators to ensure long-term ecosystem stability.
-                        </p>
-                      </div>
-
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                          <h4 className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Operational Guide</h4>
-                        </div>
-                        <p className="text-[10px] text-zinc-500 leading-relaxed font-medium">
-                          Watch streams, complete social handshakes, and grow your peer network to maximize your PEPE allocation. All credits are processed through the BSC network vault.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+              <EarnTab 
+                profile={profile}
+                adState={adState}
+                isLimitReached={isLimitReached}
+                cooldownRemaining={cooldownRemaining}
+                handleWatchAd={handleWatchAd}
+                resetCountdown={resetCountdown}
+              />
             )}
 
             {activeTab === 'wallet' && (
-              <motion.div key="wallet" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-4 space-y-6">
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold tracking-tight mb-1 font-display">Vault</h2>
-                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">Asset Management</p>
-                </div>
-                
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-emerald-500/2 blur-[40px] rounded-full pointer-events-none"></div>
-                  <div className="relative glass rounded-[36px] p-8 border-white/5 text-center flex flex-col items-center shimmer bg-gradient-to-b from-white/[0.02] to-transparent">
-                    <div className="w-16 h-16 rounded-3xl glass flex items-center justify-center mb-6 border border-white/5 text-emerald-500 shadow-2xl">
-                      <Wallet size={32} />
-                    </div>
-                    <span className="text-[9px] text-zinc-600 font-black uppercase tracking-[0.4em] mb-3">Available Balance</span>
-                    <div className="flex flex-col mb-8">
-                      <span className="text-4xl font-black font-display tracking-tight text-white mb-2 block">
-                        <Counter value={safeNumber(profile?.balance)} />
-                      </span>
-                      <span className="text-[11px] font-bold text-zinc-500 mt-2 uppercase tracking-widest">
-                         {profile?.preferredCurrency && profile.preferredCurrency !== 'pepe' 
-                           ? `≈ ${currencyService.POPULAR_CURRENCIES.find(c => c.id === profile.preferredCurrency)?.symbol || ''}${((safeNumber(profile?.balance)) * (pepePrice || 0)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${profile.preferredCurrency.toUpperCase()}`
-                           : `≈ $${((safeNumber(profile?.balance)) * (pepePrice || 0.000008)).toFixed(4)} USD`}
-                      </span>
-                    </div>
-                    
-                    <button className="w-full h-14 bg-emerald-500 text-black rounded-[20px] font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_15px_30px_rgba(16,185,129,0.15)] active:scale-95 transition-all mb-4">
-                      Withdraw Assets
-                    </button>
-                    
-                    <div className="flex gap-4 w-full px-2">
-                       <div className="flex-1 flex flex-col items-center">
-                          <span className="text-[7px] font-black text-zinc-700 uppercase tracking-widest mb-1">Method_Alpha</span>
-                          <span className="text-[9px] font-bold text-zinc-500">BSC Network</span>
-                       </div>
-                       <div className="w-px h-6 bg-white/5"></div>
-                       <div className="flex-1 flex flex-col items-center">
-                          <span className="text-[7px] font-black text-zinc-700 uppercase tracking-widest mb-1">Method_Beta</span>
-                          <span className="text-[9px] font-bold text-zinc-500">Binance ID</span>
-                       </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 px-6 flex items-center justify-center gap-2">
-                    <Info size={10} className="text-zinc-700" />
-                    <span className="text-[8px] text-zinc-700 font-black uppercase tracking-widest">Minimum Threshold: 50,000 PEPE</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                   <div className="flex items-center justify-between px-2">
-                     <h4 className="text-[9px] font-black text-zinc-700 uppercase tracking-[0.3em]">History</h4>
-                     <div className="h-px flex-1 bg-zinc-900/50 mx-4"></div>
-                   </div>
-                   <div className="flex flex-col gap-2">
-                     {[1,2].map(i => (
-                       <div key={i} className="glass rounded-[20px] p-4 border-white/5 flex items-center justify-between opacity-30">
-                          <div className="flex items-center gap-3">
-                             <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center text-zinc-600">
-                                <ArrowUpRight size={14} />
-                             </div>
-                             <div className="flex flex-col">
-                                <span className="text-[10px] font-bold text-zinc-500">PEPE_DISPATCH</span>
-                                <span className="text-[8px] font-black text-zinc-700 uppercase tracking-widest">Processing...</span>
-                             </div>
-                          </div>
-                          <span className="text-[10px] font-black text-zinc-600">0.00</span>
-                       </div>
-                     ))}
-                   </div>
-                </div>
-              </motion.div>
+              <WalletTab 
+                profile={profile}
+                currencyDisplay={currencyDisplay}
+              />
             )}
 
             {activeTab === 'friends' && profile && (
@@ -1139,62 +795,11 @@ export default function App() {
             )}
 
             {activeTab === 'profile' && (
-              <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-5 pt-4 space-y-6">
-                 <div className="mb-6">
-                  <h2 className="text-xl font-bold tracking-tight mb-1 font-display">Operator</h2>
-                  <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest">System Identity</p>
-                </div>
-                
-                <div className="space-y-6">
-                   <div className="flex flex-col items-center py-4">
-                    <div className="w-24 h-24 rounded-full border border-white/5 p-1.5 bg-zinc-900 overflow-hidden mb-4 shadow-2xl relative group">
-                       <div className="absolute inset-0 bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors animate-pulse"></div>
-                       <img 
-                          src={user?.photo_url || `https://api.dicebear.com/7.x/pixel-art/svg?seed=${user?.id}`} 
-                          alt="Operator" 
-                          className="rounded-full w-full h-full object-cover relative z-10 grayscale hover:grayscale-0 transition-all duration-500" 
-                        />
-                    </div>
-                    <div className="text-center">
-                      <h3 className="text-lg font-black tracking-tight">{user?.first_name} {user?.last_name}</h3>
-                      <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1">Certified Node Operator</p>
-                    </div>
-                  </div>
-
-                  <div className="glass rounded-[32px] border-white/5 overflow-hidden flex flex-col divide-y divide-white/5">
-                    <ProfileRow label="Oper_UID" value={user?.id.toString() || '0'} mono />
-                    <ProfileRow label="Alias_Protocol" value={`@${user?.username || 'ANON'}`} highlight />
-                    <ProfileRow label="Node_Integrity" value={`${safeNumber(profile?.trustScore, 100)}% Verified`} highlight />
-                    <ProfileRow label="Current_Level" value={`LVL ${safeNumber(profile?.level, 1)}`} />
-                  </div>
-
-                  <div className="glass p-5 rounded-[28px] border-white/5 bg-zinc-950/20">
-                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center">
-                           <Settings size={14} className="text-zinc-600" />
-                        </div>
-                        <span className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Protocol Settings</span>
-                     </div>
-                     <div className="space-y-3">
-                        <button 
-                          onClick={() => setIsCurrencyModalOpen(true)}
-                          className="w-full flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 active:scale-[0.98] transition-all"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Globe size={14} className="text-emerald-500" />
-                            <span className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Display Currency</span>
-                          </div>
-                          <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                            {currencyService.POPULAR_CURRENCIES.find(c => c.id === profile?.preferredCurrency)?.id.toUpperCase() || 'PEPE'}
-                          </span>
-                        </button>
-                        <button className="w-full py-4 text-red-500/40 font-black text-[9px] uppercase tracking-widest hover:text-red-500 transition-colors active:scale-95">
-                           Purge Session Data
-                        </button>
-                     </div>
-                  </div>
-                </div>
-              </motion.div>
+              <ProfileTab 
+                user={user}
+                profile={profile}
+                setIsCurrencyModalOpen={setIsCurrencyModalOpen}
+              />
             )}
 
           </AnimatePresence>
@@ -1386,119 +991,5 @@ export default function App() {
   );
 }
 
-function Counter({ value: valueArg, decimals = 0 }: { value: any, decimals?: number }) {
-  const value = safeNumber(valueArg);
-  const [displayValue, setDisplayValue] = useState(value);
-  
-  useEffect(() => {
-    let start = displayValue;
-    const end = value;
-    const duration = 1000;
-    const startTime = Date.now();
-    
-    const animate = () => {
-      const now = Date.now();
-      const elapsed = now - startTime;
-      const progress = Math.min(elapsed / duration, 1);
-      
-      const easeOutExpo = (x: number) => x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
-      const current = start + (end - start) * easeOutExpo(progress);
-      
-      setDisplayValue(current);
-      
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-    
-    requestAnimationFrame(animate);
-  }, [value]);
-
-  return <>{displayValue.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</>;
-}
-
-function TimerDisplay({ label, value }: { label: string, value: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <div className="w-10 h-10 glass rounded-lg flex items-center justify-center border border-white/5 shadow-inner">
-        <span className="text-xs font-black tracking-tighter tabular-nums font-mono text-emerald-500">{value}</span>
-      </div>
-      <span className="text-[6px] font-bold text-zinc-600 mt-1 uppercase tracking-tighter">{label}</span>
-    </div>
-  );
-}
-
-function SocialTask({ icon, title, reward, actionLabel }: { icon: ReactNode, title: string, reward: string, actionLabel: string }) {
-  return (
-    <div className="glass p-3 rounded-2xl flex items-center justify-between border-white/5">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-zinc-500">
-          {icon}
-        </div>
-        <div className="flex flex-col">
-          <span className="text-[11px] font-bold text-zinc-300 leading-none mb-1">{title}</span>
-          <span className="text-[10px] font-black text-emerald-500 leading-none tracking-tight">{reward} PEPE</span>
-        </div>
-      </div>
-      <button className="px-4 py-2 glass-neon rounded-lg font-black text-[9px] uppercase tracking-widest text-emerald-500 transition-all active:scale-95">
-        {actionLabel}
-      </button>
-    </div>
-  );
-}
-
-function EarnCard({ icon, title, reward, desc, actionLabel, disabled }: { icon: ReactNode, title: string, reward: string, desc: string, actionLabel: string, disabled?: boolean }) {
-  return (
-    <div className={`glass relative p-5 rounded-[28px] border-white/5 transition-all ${disabled ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
-      <div className="flex items-center gap-4 mb-3">
-        <div className="w-11 h-11 glass-neon rounded-xl flex items-center justify-center text-emerald-500 shadow-neon">
-          {icon}
-        </div>
-        <div>
-          <h3 className="text-sm font-bold tracking-tight text-white">{title}</h3>
-          <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">{reward} PEPE</span>
-        </div>
-      </div>
-      <p className="text-[10px] text-zinc-500 mb-4 leading-relaxed font-medium">{desc}</p>
-      <button 
-        disabled={disabled}
-        className={`w-full py-3.5 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 ${
-          disabled 
-            ? 'glass text-zinc-700 border-white/5' 
-            : 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/10'
-        }`}
-      >
-        {actionLabel}
-      </button>
-    </div>
-  );
-}
-
-function ProfileRow({ label, value, highlight, mono }: { label: string, value: string, highlight?: boolean, mono?: boolean }) {
-  return (
-    <div className="flex items-center justify-between p-4 px-5">
-      <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">{label}</span>
-      <span className={`text-[10px] font-bold ${highlight ? 'text-emerald-500' : 'text-zinc-300'} ${mono ? 'font-mono' : ''}`}>{value}</span>
-    </div>
-  );
-}
-
-function NavItem({ icon, active, label, onClick }: { icon: ReactNode, active?: boolean, label: string, onClick: () => void }) {
-  return (
-    <button 
-      onClick={onClick} 
-      className={`flex flex-col items-center gap-1.5 transition-all outline-none relative ${active ? 'text-emerald-500' : 'text-zinc-700 hover:text-zinc-500'}`}
-    >
-      <motion.div
-        whileTap={{ scale: 0.8 }}
-        className={`p-1 ${active ? 'bg-emerald-500/10 rounded-xl' : ''}`}
-      >
-        {icon}
-      </motion.div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.1em] shrink-0 transition-all ${active ? 'opacity-100' : 'opacity-40'}`}>
-        {label}
-      </span>
-    </button>
-  );
-}
+// Sub-components moved to UIElements.tsx
 
