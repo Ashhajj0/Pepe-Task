@@ -1,0 +1,6 @@
+{
+  "name": "PepeTask",
+  "description": "A premium Telegram Mini Web App for task management and balance tracking with Pepe character theme.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

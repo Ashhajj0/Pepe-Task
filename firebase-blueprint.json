@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user statistics, balance, and task progress.",
+      "type": "object",
+      "properties": {
+        "telegramId": { "type": "number" },
+        "username": { "type": "string" },
+        "first_name": { "type": "string" },
+        "last_name": { "type": "string" },
+        "photo_url": { "type": "string" },
+        "balance": { "type": "number" },
+        "totalEarned": { "type": "number" },
+        "adsWatchedToday": { "type": "number" },
+        "tasksCompleted": { "type": "number" },
+        "lastResetDate": { "type": "string" },
+        "lastAdWatchTime": { "type": "object" },
+        "trustScore": { "type": "number" },
+        "level": { "type": "number" },
+        "levelProgress": { "type": "number" },
+        "preferredCurrency": { "type": "string" },
+        "referCount": { "type": "number" },
+        "referralCode": { "type": "string" },
+        "referralLink": { "type": "string" },
+        "referredBy": { "type": "string" },
+        "totalReferrals": { "type": "number" },
+        "activeReferrals": { "type": "number" },
+        "referralEarnings": { "type": "number" },
+        "createdAt": { "type": "object" },
+        "lastLogin": { "type": "object" }
+      },
+      "required": ["telegramId", "username", "balance", "totalEarned", "referralCode", "referralLink"]
+    },
+    "Referral": {
+      "title": "Referral Record",
+      "description": "Logs a successful referral connection between two users.",
+      "type": "object",
+      "properties": {
+        "referrerId": { "type": "string" },
+        "referredId": { "type": "string" },
+        "joinedAt": { "type": "object" },
+        "totalGenerated": { "type": "number" },
+        "totalCommissionPaid": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of all users registered via Telegram."
+    },
+    "/referrals/{referralId}": {
+      "schema": "Referral",
+      "description": "Collection tracks relationships between referrers and referred users."
+    }
+  }
+}
