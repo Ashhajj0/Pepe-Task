@@ -1,7 +1,7 @@
 import { db } from '../lib/firebase';
-import { doc, writeBatch, increment, serverTimestamp, getDoc, updateDoc, runTransaction } from 'firebase/firestore';
+import { doc, writeBatch, increment, serverTimestamp, getDoc, updateDoc, runTransaction, Timestamp } from 'firebase/firestore';
 import { UserProfile } from '../types';
-import { sanitizeFirestoreData } from '../lib/utils/firestore';
+import { sanitizeFirestoreData, safeDate } from '../lib/utils/firestore';
 
 export const AD_CONFIG = {
   DAILY_LIMIT: 15,
@@ -16,22 +16,24 @@ export const canWatchAd = (profile: UserProfile | null): { canWatch: boolean; re
   if (!profile) return { canWatch: false, reason: 'Profile not loaded' };
 
   // Check Daily Limit
-  const today = new Date().toISOString().split('T')[0];
-  if (profile.lastResetDate === today && profile.adsWatchedToday >= AD_CONFIG.DAILY_LIMIT) {
+  const now = new Date();
+  const lastReset = safeDate(profile.lastDailyReset);
+  const isNewDay = now.toDateString() !== lastReset.toDateString();
+  
+  if (!isNewDay && profile.adsWatchedToday >= AD_CONFIG.DAILY_LIMIT) {
     return { canWatch: false, reason: 'Daily limit reached. Come back tomorrow.' };
   }
 
   // Check Cooldown
-  if (profile.lastAdWatchTime) {
-    const lastWatch = profile.lastAdWatchTime.seconds ? profile.lastAdWatchTime.seconds * 1000 : new Date(profile.lastAdWatchTime).getTime();
-    const now = Date.now();
-    const elapsed = (now - lastWatch) / 1000;
+  if (profile.adCooldownUntil) {
+    const cooldownUntil = safeDate(profile.adCooldownUntil);
+    const msLeft = cooldownUntil.getTime() - now.getTime();
     
-    if (elapsed < AD_CONFIG.COOLDOWN_SECONDS) {
+    if (msLeft > 0) {
       return { 
         canWatch: false, 
         reason: 'Cooldown active', 
-        remainingCooldown: Math.ceil(AD_CONFIG.COOLDOWN_SECONDS - elapsed) 
+        remainingCooldown: Math.ceil(msLeft / 1000) 
       };
     }
   }
@@ -49,7 +51,6 @@ export const getSimulatedDuration = () => {
 
 export const claimAdReward = async (userId: string, reward: number, currentProfile: UserProfile) => {
   const userRef = doc(db, 'users', userId);
-  const today = new Date().toISOString().split('T')[0];
 
   try {
     const result = await runTransaction(db, async (transaction) => {
@@ -58,12 +59,28 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       
       const userData = userSnap.data() as UserProfile;
       
+      // Daily Reset Logic check inside transaction
+      const now = new Date();
+      const lastReset = safeDate(userData.lastDailyReset);
+      const isNewDay = now.toDateString() !== lastReset.toDateString();
+      
+      const adsToday = isNewDay ? 1 : (userData.adsWatchedToday || 0) + 1;
+      
+      if (!isNewDay && adsToday > AD_CONFIG.DAILY_LIMIT) {
+        throw new Error('Daily limit reached');
+      }
+
+      // Check Cooldown
+      const cooldownUntil = safeDate(userData.adCooldownUntil);
+      if (now < cooldownUntil) {
+        throw new Error('Cooldown active');
+      }
+
       // Calculate XP and level
       const xpGain = 10;
       let newXp = (userData.xp || 0) + xpGain;
       let newLevel = userData.level || 1;
       
-      // Level progression logic: 100 XP per level
       const xpForNextLevel = 100;
       if (newXp >= xpForNextLevel) {
         newLevel += Math.floor(newXp / xpForNextLevel);
@@ -72,16 +89,31 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       
       const levelProgress = Math.floor((newXp / xpForNextLevel) * 100);
 
+      // Task History Logic (Keep last 30)
+      const newEntry = {
+        type: 'AD_WATCH',
+        reward: reward,
+        completedAt: serverTimestamp()
+      };
+      
+      let history = userData.taskHistory || [];
+      history = [newEntry, ...history].slice(0, 30);
+
+      const nextCooldown = new Date(now.getTime() + AD_CONFIG.COOLDOWN_SECONDS * 1000);
+
       const updateData = sanitizeFirestoreData({
         balance: increment(reward),
         totalEarned: increment(reward),
-        adsWatchedToday: increment(1),
+        totalAdRewards: increment(reward),
+        adsWatchedToday: adsToday,
         tasksCompleted: increment(1),
         lastAdWatchTime: serverTimestamp(),
-        lastResetDate: today,
+        adCooldownUntil: Timestamp.fromDate(nextCooldown),
+        lastDailyReset: isNewDay ? serverTimestamp() : userData.lastDailyReset,
         level: newLevel,
         xp: newXp,
-        levelProgress: levelProgress
+        levelProgress: levelProgress,
+        taskHistory: history
       });
 
       transaction.update(userRef, updateData);
@@ -91,14 +123,9 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       const isValidReferrer = referredBy && referredBy !== 'null' && referredBy !== 'undefined' && referredBy !== '';
       
       if (isValidReferrer) {
-        // Calculate 10% commission, floor to avoid fractional PEPE if they used decimals, 
-        // but PEPE is usually integer-based here.
         const commission = Math.floor(reward * 0.1);
-        
         const referrerRef = doc(db, 'users', referredBy);
-        const referralId = `${referredBy}_${userId}`;
-        const referralRef = doc(db, 'referrals', referralId);
-
+        
         if (commission > 0) {
           transaction.update(referrerRef, {
             balance: increment(commission),
@@ -106,12 +133,6 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
             totalEarned: increment(commission)
           });
         }
-        
-        // Always update referral record stats to show activity
-        transaction.update(referralRef, {
-          totalGenerated: increment(reward),
-          totalCommissionPaid: increment(commission)
-        });
       }
 
       return { reward, leveledUp: newLevel > userData.level };
@@ -152,16 +173,8 @@ export const claimLevelBonus = async (userId: string, currentProfile: UserProfil
   }
 };
 
-export const checkAndResetDailyLimit = async (userId: string, profile: UserProfile) => {
-  const today = new Date().toISOString().split('T')[0];
-  if (profile.lastResetDate !== today) {
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-      adsWatchedToday: 0,
-      lastResetDate: today
-    });
-  }
-};
+// Daily reset is handled atomically in the claimAdReward transaction. 
+// No standalone reset function is needed to prevent write conflicts.
 
 export const getTimeUntilNextReset = () => {
   const now = new Date();

@@ -5,7 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PepeTask</title>
     <link rel="icon" type="image/png" href="/logo.png" />
+    <script>
+      // Support for older Telegram versions that don't have CloudStorage
+      // This polyfill prevents errors when third-party scripts (like ads) try to use it
+      (function() {
+        const polyfill = () => {
+          if (window.Telegram && window.Telegram.WebApp) {
+            try {
+              const version = window.Telegram.WebApp.version || "6.0";
+              const versionFloat = parseFloat(version);
+              
+              // CloudStorage is officially supported from version 6.9
+              if (versionFloat < 6.9) {
+                // If it's already there (maybe another polyfill), don't overwrite
+                if (window.Telegram.WebApp.CloudStorage) return;
+
+                const storage = {
+                  setItem: (k, v, cb) => {
+                    try { localStorage.setItem('tg_cloud_' + k, v); cb && cb(null, true); } 
+                    catch (e) { cb && cb(e, false); }
+                  },
+                  getItem: (k, cb) => {
+                    try { const v = localStorage.getItem('tg_cloud_' + k); cb && cb(null, v); }
+                    catch (e) { cb && cb(e, null); }
+                  },
+                  getItems: (ks, cb) => {
+                    try {
+                      const res = {};
+                      ks.forEach(k => { res[k] = localStorage.getItem('tg_cloud_' + k); });
+                      cb && cb(null, res);
+                    } catch (e) { cb && cb(e, {}); }
+                  },
+                  removeItem: (k, cb) => {
+                    try { localStorage.removeItem('tg_cloud_' + k); cb && cb(null, true); }
+                    catch (e) { cb && cb(e, false); }
+                  },
+                  removeItems: (ks, cb) => {
+                    try { ks.forEach(k => localStorage.removeItem('tg_cloud_' + k)); cb && cb(null, true); }
+                    catch (e) { cb && cb(e, false); }
+                  },
+                  getKeys: (cb) => {
+                    try {
+                      const keys = Object.keys(localStorage).filter(k => k.startsWith('tg_cloud_')).map(k => k.replace('tg_cloud_', ''));
+                      cb && cb(null, keys);
+                    } catch (e) { cb && cb(e, []); }
+                  }
+                };
+
+                // Define it safely
+                Object.defineProperty(window.Telegram.WebApp, 'CloudStorage', {
+                  value: storage,
+                  writable: true,
+                  configurable: true,
+                  enumerable: true
+                });
+                
+                console.log('[Polyfill] Telegram CloudStorage enabled via LocalStorage (Version ' + version + ')');
+              }
+            } catch (e) {
+              // Silently fail if something goes wrong to not block the app
+            }
+          }
+        };
+
+        // Run after SDK script but before other scripts would use it
+        // We poll briefly until WebApp is globally available
+        let attempts = 0;
+        const interval = setInterval(() => {
+          attempts++;
+          if (window.Telegram && window.Telegram.WebApp) {
+            polyfill();
+            clearInterval(interval);
+          }
+          if (attempts > 100) clearInterval(interval);
+        }, 50);
+      })();
+    </script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://ad.gigapub.tech/script?id=6695"></script>
   </head>
   <body>
     <div id="root"></div>

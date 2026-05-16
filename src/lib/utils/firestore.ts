@@ -58,18 +58,32 @@ export function safeString(val: any, fallback = ''): string {
   if (typeof val === 'string') return val;
   if (val === null || val === undefined) return fallback;
   if (typeof val === 'object') {
-    // If it's a timestamp, try to format it
-    if (val.toDate && typeof val.toDate === 'function') {
-      try {
-        return val.toDate().toISOString();
-      } catch (e) {
-        return fallback;
-      }
-    }
-    // Don't render raw objects
-    return fallback;
+    return safeDate(val).toISOString();
   }
   return String(val);
+}
+
+export function safeDate(val: any): Date {
+  if (!val) return new Date(0);
+  if (val instanceof Date) return val;
+  
+  // Firestore Timestamp instance
+  if (typeof val.toDate === 'function') {
+    try {
+      return val.toDate();
+    } catch (e) {
+      // Fall through to other checks
+    }
+  }
+
+  // Handle plain objects that look like Timestamps { seconds, nanoseconds }
+  if (typeof val.seconds === 'number') {
+    return new Date(val.seconds * 1000 + (val.nanoseconds || 0) / 1000000);
+  }
+
+  // Handle strings or numbers
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? new Date(0) : d;
 }
 
 export enum OperationType {

@@ -4,7 +4,7 @@ import { X, Wallet, CreditCard, ChevronRight, AlertCircle, CheckCircle2, History
 import { UserProfile, WithdrawalRequest, WithdrawalStatus } from '../types';
 import { WithdrawalService } from '../services/withdrawalService';
 import { Counter } from './UIElements';
-import { safeNumber } from '../lib/utils/firestore';
+import { safeNumber, safeDate } from '../lib/utils/firestore';
 
 interface WithdrawalModalProps {
   isOpen: boolean;
@@ -249,7 +249,7 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClos
                           <div className="flex items-center gap-1.5">
                             <Clock size={10} className="text-slate-300" />
                             <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tighter">
-                              {req.createdAt?.toDate ? req.createdAt.toDate().toLocaleString() : new Date(req.createdAt).toLocaleString()}
+                              {safeDate(req.createdAt).toLocaleString()}
                             </span>
                           </div>
                           <span className="text-[8px] text-slate-300 font-bold uppercase italic">Processed within 24h</span>

@@ -36,6 +36,17 @@ export interface UserProfile {
   totalReferrals: number;
   activeReferrals: number;
   referralEarnings: number;
+  totalAdRewards?: number;
+  adCooldownUntil?: any;
+  lastDailyReset?: any;
+  taskHistory?: Array<{
+    type: string;
+    reward: number;
+    completedAt: any;
+  }>;
+  isBanned?: boolean;
+  totalWithdrawalsCount?: number;
+  totalWithdrawnAmount?: number;
   createdAt: any; 
   lastLogin: any;
 }
@@ -68,5 +79,6 @@ declare global {
     Telegram: {
       WebApp: any;
     };
+    showGiga: () => Promise<void>;
   }
 }

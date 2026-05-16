@@ -76,6 +76,14 @@
     "/withdrawals/{withdrawalId}": {
       "schema": "Withdrawal",
       "description": "Collection of all withdrawal requests for manual processing."
+    },
+    "/admins/{adminId}": {
+      "schema": "object",
+      "description": "Whitelisted admin users."
+    },
+    "/adminLogs/{logId}": {
+      "schema": "object",
+      "description": "Audit trail of admin actions."
     }
   }
 }

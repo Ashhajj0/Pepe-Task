@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { WithdrawalRequest, WithdrawalStatus } from '../types';
-import { handleFirestoreError, OperationType } from '../lib/utils/firestore';
+import { handleFirestoreError, OperationType, safeDate } from '../lib/utils/firestore';
 
 const WITHDRAWALS_COLLECTION = 'withdrawals';
 const USERS_COLLECTION = 'users';
@@ -55,7 +55,7 @@ export const WithdrawalService = {
 
         // 3. 24h Cooldown check
         if (lastWithdrawalAt) {
-          const lastTime = lastWithdrawalAt instanceof Timestamp ? lastWithdrawalAt.toDate().getTime() : lastWithdrawalAt;
+          const lastTime = safeDate(lastWithdrawalAt).getTime();
           const now = Date.now();
           const daylight = 24 * 60 * 60 * 1000;
           if (now - lastTime < daylight) {
@@ -110,8 +110,8 @@ export const WithdrawalService = {
 
       // Sort in memory to avoid "The query requires an index" error
       return docs.sort((a, b) => {
-        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (a.createdAt || 0);
-        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (b.createdAt || 0);
+        const timeA = safeDate(a.createdAt).getTime();
+        const timeB = safeDate(b.createdAt).getTime();
         return timeB - timeA;
       });
     } catch (error) {
