@@ -1,8 +1,79 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // User Profile Validation
+    function isValidUser(data) {
+      return data.telegramId is number &&
+             data.username is string && data.username.size() <= 100 &&
+             data.first_name is string && data.first_name.size() <= 100 &&
+             data.balance is number && data.balance >= 0 &&
+             data.pendingWithdrawalBalance is number && data.pendingWithdrawalBalance >= 0;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isSignedIn() && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        // Allow updating balance, tasks, ads, etc.
+        incoming().diff(existing()).affectedKeys().hasAny(['balance', 'pendingWithdrawalBalance', 'lastWithdrawalAt', 'adsWatchedToday', 'tasksCompleted', 'xp', 'level', 'levelProgress', 'lastLogin', 'preferredCurrency'])
+      );
+    }
+
+    // Withdrawal Validation
+    function isValidWithdrawal(data) {
+      return data.userId is string &&
+             data.telegramUsername is string && data.telegramUsername.size() <= 100 &&
+             data.withdrawalMethod in ['BEP20', 'BinanceID'] &&
+             data.walletAddressOrBinanceId is string && data.walletAddressOrBinanceId.size() <= 200 &&
+             data.amount is number && data.amount >= 8000 &&
+             data.status in ['pending', 'approved', 'rejected', 'completed'] &&
+             data.createdAt == request.time;
+    }
+
+    match /withdrawals/{withdrawalId} {
+      // Users can only see their own withdrawals
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      // Users can create a withdrawal request if they are the owner and it is valid
+      allow create: if isSignedIn() && isOwner(incoming().userId) && isValidWithdrawal(incoming()) && incoming().status == 'pending';
+      
+      // Updates are for admins only. No user updates.
+      allow update: if false; 
+      allow delete: if false;
+    }
+
+    match /referrals/{referralId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
     }
   }
 }

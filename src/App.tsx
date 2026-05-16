@@ -277,7 +277,9 @@ export default function App() {
             prev.level === data.level &&
             prev.preferredCurrency === data.preferredCurrency &&
             prev.xp === data.xp &&
-            prev.adsWatchedToday === data.adsWatchedToday
+            prev.adsWatchedToday === data.adsWatchedToday &&
+            prev.pendingWithdrawalBalance === data.pendingWithdrawalBalance &&
+            prev.lastWithdrawalAt === data.lastWithdrawalAt
           ) {
             return prev;
           }
@@ -495,6 +497,7 @@ export default function App() {
             last_name: tgUser.last_name || '',
             photo_url: tgUser.photo_url || '',
             balance: 0,
+            pendingWithdrawalBalance: 0,
             totalEarned: 0,
             adsWatchedToday: 0,
             tasksCompleted: 0,
@@ -754,6 +757,7 @@ export default function App() {
             <WalletTab 
               profile={profile}
               currencyDisplay={currencyDisplay}
+              updateProfile={() => {}}
             />
           )}
 
@@ -902,13 +906,13 @@ export default function App() {
         )}
 
         {/* Global Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-[100] px-3 pb-6 pointer-events-none sm:absolute">
-          <div className="glass rounded-[20px] p-1 grid grid-cols-5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] border-white/60 pointer-events-auto">
-            <NavItem icon={<LayoutDashboard size={18} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
-            <NavItem icon={<Zap size={18} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
-            <NavItem icon={<Wallet size={18} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
-            <NavItem icon={<Users size={18} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
-            <NavItem icon={<UserIcon size={18} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
+        <div className="fixed bottom-0 left-0 right-0 z-[100] px-6 pb-8 pointer-events-none sm:absolute">
+          <div className="glass rounded-[32px] p-2 grid grid-cols-5 shadow-[0_15px_40px_rgba(0,0,0,0.1)] border-white/70 pointer-events-auto">
+            <NavItem icon={<LayoutDashboard size={20} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
+            <NavItem icon={<Zap size={20} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
+            <NavItem icon={<Wallet size={20} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
+            <NavItem icon={<Users size={20} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
+            <NavItem icon={<UserIcon size={20} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
           </div>
         </div>
       </div>

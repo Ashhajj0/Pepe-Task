@@ -11,11 +11,13 @@
         "last_name": { "type": "string" },
         "photo_url": { "type": "string" },
         "balance": { "type": "number" },
+        "pendingWithdrawalBalance": { "type": "number" },
         "totalEarned": { "type": "number" },
         "adsWatchedToday": { "type": "number" },
         "tasksCompleted": { "type": "number" },
         "lastResetDate": { "type": "string" },
         "lastAdWatchTime": { "type": "object" },
+        "lastWithdrawalAt": { "type": "object" },
         "trustScore": { "type": "number" },
         "level": { "type": "number" },
         "levelProgress": { "type": "number" },
@@ -43,6 +45,23 @@
         "totalGenerated": { "type": "number" },
         "totalCommissionPaid": { "type": "number" }
       }
+    },
+    "Withdrawal": {
+      "title": "Withdrawal Request",
+      "description": "Record of a user's request to withdraw PEPE to a wallet or Binance ID.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "telegramUsername": { "type": "string" },
+        "withdrawalMethod": { "type": "string" },
+        "walletAddressOrBinanceId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "object" },
+        "processedAt": { "type": "object" },
+        "adminNote": { "type": "string" }
+      },
+      "required": ["userId", "telegramUsername", "withdrawalMethod", "walletAddressOrBinanceId", "amount", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -53,6 +72,10 @@
     "/referrals/{referralId}": {
       "schema": "Referral",
       "description": "Collection tracks relationships between referrers and referred users."
+    },
+    "/withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "Collection of all withdrawal requests for manual processing."
     }
   }
 }

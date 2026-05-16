@@ -1,15 +1,19 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { UserProfile } from '../types';
 import { Counter } from './UIElements';
-import { Wallet, Info, ArrowUpRight } from 'lucide-react';
+import { Wallet, Info, ArrowUpRight, Gem, History } from 'lucide-react';
 import { safeNumber } from '../lib/utils/firestore';
+import { WithdrawalModal } from './WithdrawalModal';
 
 interface WalletTabProps {
   profile: UserProfile | null;
   currencyDisplay: { formatted: string };
+  updateProfile: () => void;
 }
 
-export const WalletTab = memo(({ profile, currencyDisplay }: WalletTabProps) => {
+export const WalletTab = memo(({ profile, currencyDisplay, updateProfile }: WalletTabProps) => {
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+
   return (
     <div className="px-6 py-6 space-y-6 min-h-full bg-slate-50/30 pb-32 no-scrollbar overflow-y-auto">
       <div className="flex flex-col gap-1">
@@ -43,11 +47,17 @@ export const WalletTab = memo(({ profile, currencyDisplay }: WalletTabProps) => 
           </div>
           
           <div className="grid grid-cols-2 gap-3">
-            <button className="flex-1 h-12 bg-black text-white rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all shadow-md shadow-slate-100 hover:bg-slate-800">
-              Transfer
+            <button 
+              onClick={() => setIsWithdrawalModalOpen(true)}
+              className="flex-1 h-12 bg-black text-white rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all shadow-md shadow-slate-100 hover:bg-slate-800"
+            >
+              Withdraw
             </button>
-            <button className="flex-1 h-12 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all hover:bg-slate-50">
-              Receive
+            <button 
+              onClick={() => setIsWithdrawalModalOpen(true)}
+              className="flex-1 h-12 bg-white text-slate-900 border border-slate-200 rounded-xl font-bold text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all hover:bg-slate-50"
+            >
+              History
             </button>
           </div>
         </div>
@@ -79,9 +89,16 @@ export const WalletTab = memo(({ profile, currencyDisplay }: WalletTabProps) => 
       <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 border-dashed flex items-center gap-3">
         <Info size={14} className="text-slate-300" />
         <p className="text-[8px] text-slate-500 font-medium leading-relaxed uppercase tracking-wider">
-          Node synchronized with blockchain data. Minimum transfer threshold: 50k PEPE.
+          Node synchronized with blockchain data. Minimum withdrawal threshold: 8,000 PEPE. Withdrawals are processed manually within 24 hours.
         </p>
       </div>
+
+      <WithdrawalModal 
+        isOpen={isWithdrawalModalOpen}
+        onClose={() => setIsWithdrawalModalOpen(false)}
+        profile={profile}
+        onSuccess={updateProfile}
+      />
     </div>
   );
 });

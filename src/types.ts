@@ -15,11 +15,13 @@ export interface UserProfile {
   last_name: string;
   photo_url: string;
   balance: number;
+  pendingWithdrawalBalance: number;
   totalEarned: number;
   adsWatchedToday: number;
   tasksCompleted: number;
   lastAdWatchTime?: any;
   lastResetDate?: string;
+  lastWithdrawalAt?: any;
   trustScore: number;
   level: number;
   xp: number;
@@ -36,6 +38,21 @@ export interface UserProfile {
   referralEarnings: number;
   createdAt: any; 
   lastLogin: any;
+}
+
+export type WithdrawalStatus = 'pending' | 'approved' | 'rejected' | 'completed';
+
+export interface WithdrawalRequest {
+  id?: string;
+  userId: string;
+  telegramUsername: string;
+  withdrawalMethod: 'BEP20' | 'BinanceID';
+  walletAddressOrBinanceId: string;
+  amount: number;
+  status: WithdrawalStatus;
+  createdAt: any;
+  processedAt?: any;
+  adminNote?: string;
 }
 
 export interface ReferralRecord {
