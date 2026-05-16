@@ -109,12 +109,22 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
             </button>
           </div>
           
-          <button 
-            onClick={handleShare}
-            className="w-full h-14 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
-          >
-            Share Link
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button 
+              onClick={handleCopyCode}
+              className="h-14 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              {copyCodeSuccess ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+              {copyCodeSuccess ? 'Copied' : 'Copy Code'}
+            </button>
+            <button 
+              onClick={handleShare}
+              className="h-14 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
+            >
+              <Share2 size={16} />
+              Share Link
+            </button>
+          </div>
         </div>
       </div>
 
