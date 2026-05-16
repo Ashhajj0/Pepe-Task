@@ -30,8 +30,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar - Fixed or Static based on preference, here we keep it sticky if possible or just let it flow */}
-      <aside className={`bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col sticky top-0 h-screen`}>
+      {/* Sidebar - Sticky on desktop */}
+      <aside className={`bg-white border-r border-slate-200 transition-all duration-300 ${isSidebarOpen ? 'w-64' : 'w-20'} hidden md:flex flex-col sticky top-0 h-screen overflow-y-auto`}>
         <div className="p-6 flex items-center gap-3 border-b border-slate-100">
           <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center text-white shrink-0">
             <Shield size={24} />

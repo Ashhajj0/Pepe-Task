@@ -46,6 +46,7 @@ export interface UserProfile {
     completedAt: any;
   }>;
   isBanned?: boolean;
+  walletAddressOrBinanceId?: string;
   totalWithdrawalsCount?: number;
   totalWithdrawnAmount?: number;
   createdAt: any; 

@@ -121,6 +121,31 @@ export const UsersManagement: React.FC = () => {
                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
                 />
               </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Payment Address / Wallet ID</label>
+                <div className="flex gap-2">
+                  <input 
+                    type="text"
+                    value={editingUser.walletAddressOrBinanceId || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, walletAddressOrBinanceId: e.target.value })}
+                    className="flex-1 h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                    placeholder="Enter wallet address or Binance ID"
+                  />
+                  <button 
+                    onClick={() => {
+                      if (editingUser.walletAddressOrBinanceId) {
+                        navigator.clipboard.writeText(editingUser.walletAddressOrBinanceId);
+                        alert('Address copied!');
+                      }
+                    }}
+                    className="px-4 bg-slate-100 rounded-xl text-slate-500 hover:bg-slate-200 transition-colors"
+                    title="Copy to clipboard"
+                    type="button"
+                  >
+                    <ExternalLink size={18} />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="pt-6 border-t border-slate-100 grid grid-cols-2 gap-4">
@@ -287,24 +312,24 @@ export const UsersManagement: React.FC = () => {
                       </span>
                     </td>
                     <td className="p-6">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-2">
                         <button 
                           onClick={() => handleEditUser(user)}
-                          className="p-2 hover:bg-black hover:text-white rounded-lg transition-all text-slate-400"
+                          className="p-2 bg-slate-900 text-white rounded-lg transition-all hover:bg-black shadow-sm"
                           title="Edit User"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => handleToggleBan(user)}
-                          className={`p-2 rounded-lg transition-all ${user.isBanned ? 'text-emerald-500 hover:bg-emerald-50' : 'text-red-400 hover:bg-red-50'}`}
+                          className={`p-2 rounded-lg transition-all border ${user.isBanned ? 'text-emerald-500 border-emerald-100 hover:bg-emerald-50' : 'text-red-400 border-red-100 hover:bg-red-50'}`}
                           title={user.isBanned ? 'Unban' : 'Ban'}
                         >
                           <Ban size={16} />
                         </button>
                         <button 
                           onClick={() => handleDeleteUser(user)}
-                          className="p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all text-red-300"
+                          className="p-2 border border-red-100 hover:bg-red-500 hover:text-white rounded-lg transition-all text-red-300"
                           title="Delete Permanently"
                         >
                           <X size={16} />

@@ -35,7 +35,7 @@ html, body {
   color: #0f172a;
   -webkit-tap-highlight-color: transparent;
   overflow-x: hidden;
-  user-select: none;
+  user-select: auto;
 }
 
 .card {
