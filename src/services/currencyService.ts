@@ -65,8 +65,8 @@ export interface MarketData {
 export const getLatestMarketData = async (): Promise<MarketData | null> => {
   const now = Date.now();
   
-  // Use cache if less than 10 seconds old
-  if (Object.keys(cachedRates).length > 0 && now - lastFetch < 10000) {
+  // Use cache if less than 5 seconds old
+  if (Object.keys(cachedRates).length > 0 && now - lastFetch < 5000) {
     return {
       pepe: cachedRates,
       usd_24h_change: cached24hChange || 0

@@ -32,7 +32,10 @@ export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, da
           <div className="mt-3 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-full border border-slate-100 shadow-sm">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest tabular-nums">
               {currencyDisplay?.rate ? (
-                `${currencyDisplay.symbol}${(profile?.balance || 0) * (currencyDisplay?.rate || 0)}`
+                <>
+                  {currencyDisplay.symbol}
+                  <Counter value={(profile?.balance || 0) * (currencyDisplay?.rate || 0)} decimals={currencyDisplay.symbol === '$' ? 4 : 2} />
+                </>
               ) : currencyDisplay.formatted}
             </span>
           </div>

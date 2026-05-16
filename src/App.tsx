@@ -100,7 +100,7 @@ export default function App() {
     }
     const interval = setInterval(() => {
        if (profile) updatePepePrice();
-    }, 30000); // Update every 30 seconds
+    }, 5000); // 5 seconds for realtime feel
     return () => clearInterval(interval);
   }, [profile?.preferredCurrency]);
 

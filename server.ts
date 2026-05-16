@@ -15,7 +15,7 @@ async function startServer() {
     data: null as any,
     timestamp: 0
   };
-  const CACHE_TTL = 10000; // 10 seconds for ultra-realtime
+  const CACHE_TTL = 3000; // 3 seconds for near-realtime
 
   // Approximate fallback rates (1 USD to X) to use as absolute last resort
   const FALLBACK_RATES: Record<string, number> = {

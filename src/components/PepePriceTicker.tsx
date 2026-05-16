@@ -61,7 +61,7 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
     };
 
     fetchPrice();
-    const interval = setInterval(fetchPrice, 30000); // 30s update is enough for background ticker
+    const interval = setInterval(fetchPrice, 5000); // 5s update for background ticker
     return () => clearInterval(interval);
   }, [preferredCurrency]);
 
