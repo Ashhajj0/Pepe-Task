@@ -96,49 +96,49 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
         <div className="h-px flex-1 bg-zinc-900/50 ml-4"></div>
       </div>
 
-      <div className="glass rounded-[32px] p-6 border-white/5 relative overflow-hidden">
-        <div className="absolute inset-0 bg-emerald-500/[0.02] pointer-events-none"></div>
+      <div className="card bg-slate-900 rounded-[32px] p-6 border-slate-800 relative overflow-hidden shadow-2xl">
+        <div className="absolute inset-0 bg-emerald-500/[0.03] pointer-events-none"></div>
         
         <div className="flex items-center justify-between mb-6 relative z-10">
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-2">
                 <h4 className="text-base font-black text-white leading-none">PEPE</h4>
-                <span className="text-[8px] font-black bg-emerald-500/20 text-emerald-500 px-1.5 py-0.5 rounded-md tracking-tighter uppercase">Live</span>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Live</span>
+                </div>
               </div>
-              <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mt-1 block font-mono">Pepe_Protocol_v1.0</span>
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block font-mono">PEPE_PROTOCOL</span>
             </div>
           </div>
           <div className="text-right">
             <div className="text-xl font-black text-white font-mono tabular-nums leading-none tracking-tighter">
               {priceData?.targetSymbol ?? ''}{priceData?.targetPrice?.toFixed(8) ?? '0.00'}
             </div>
-            <div className={`flex items-center justify-end gap-1 mt-1 ${isPositive ? 'text-emerald-500' : 'text-red-500'}`}>
+            <div className={`flex items-center justify-end gap-1 mt-1.5 ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
               {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
-              <span className="text-[10px] font-black font-mono">
+              <span className="text-[9px] font-black font-mono">
                 {isPositive ? '+' : ''}{(priceData?.usd_24h_change ?? 0).toFixed(2)}%
               </span>
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 relative z-10">
           <div className="h-px bg-white/5 w-full"></div>
           
           <div className="flex gap-3">
             <div className="shrink-0 mt-0.5">
-              <Info size={14} className="text-zinc-600" />
+              <Info size={14} className="text-slate-600" />
             </div>
-            <div className="space-y-2">
-              <p className="text-[10px] text-zinc-400 font-medium leading-relaxed">
-                PEPE is a deflationary memecoin launched on the Ethereum blockchain. 
-                Inspired by the legendary internet meme "Pepe the Frog", it aims to 
-                establish itself as the ultimate memecoin icon in the crypto space.
+            <div className="space-y-3">
+              <p className="text-[10px] text-slate-400 font-medium leading-relaxed opacity-70">
+                PEPE is established as the premier extraction protocol icon in the network space.
               </p>
               <div className="flex gap-2">
-                <span className="text-[8px] font-black text-zinc-600 uppercase border border-white/10 px-2 py-0.5 rounded-md">ERC-20</span>
-                <span className="text-[8px] font-black text-zinc-600 uppercase border border-white/10 px-2 py-0.5 rounded-md">Deflationary</span>
-                <span className="text-[8px] font-black text-zinc-600 uppercase border border-white/10 px-2 py-0.5 rounded-md">No Tax</span>
+                <span className="text-[8px] font-black text-slate-500 uppercase border border-white/5 px-2 py-0.5 rounded-md">ERC-20</span>
+                <span className="text-[8px] font-black text-emerald-500/50 uppercase border border-emerald-500/10 px-2 py-0.5 rounded-md">Deflationary</span>
               </div>
             </div>
           </div>

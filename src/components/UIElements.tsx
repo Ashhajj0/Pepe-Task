@@ -41,11 +41,11 @@ Counter.displayName = 'Counter';
 export const TimerDisplay = memo(({ label, value }: { label: string, value: string }) => {
   return (
     <div className="flex flex-col items-center">
-      <div className="w-14 h-14 glass flex items-center justify-center rounded-[18px] border-white/60 shadow-sm relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/40 to-transparent pointer-events-none"></div>
-        <span className="text-xl font-black text-slate-900 font-display relative z-10 tabular-nums">{value}</span>
+      <div className="w-12 h-12 glass flex items-center justify-center rounded-[14px] border-white/50 shadow-sm relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none"></div>
+        <span className="text-lg font-black text-slate-900 font-display relative z-10 tabular-nums">{value}</span>
       </div>
-      <span className="text-[8px] font-black text-slate-400 mt-2 tracking-[0.2em] uppercase">{label}</span>
+      <span className="text-[7px] font-black text-slate-400 mt-2 tracking-[0.15em] uppercase">{label}</span>
     </div>
   );
 });
@@ -54,19 +54,19 @@ TimerDisplay.displayName = 'TimerDisplay';
 
 export const SocialTask = memo(({ icon, title, reward, actionLabel }: { icon: ReactNode, title: string, reward: string, actionLabel: string }) => {
   return (
-    <div className="card h-20 rounded-[32px] flex items-center justify-between pl-6 pr-5 hover:bg-slate-50 transition-all group active:scale-[0.98] border-white/10">
-      <div className="flex items-center gap-5">
-        <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-white transition-colors shadow-inner-soft">
+    <div className="card h-16 rounded-[24px] flex items-center justify-between pl-5 pr-4 hover:bg-slate-50/50 transition-all group active:scale-[0.98] border-white/10">
+      <div className="flex items-center gap-4">
+        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-white transition-colors">
           {icon}
         </div>
         <div className="flex flex-col">
-          <span className="text-[11px] font-black text-slate-900 uppercase tracking-tight">{title}</span>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">{reward} PEPE</span>
+          <span className="text-[10px] font-black text-slate-900 uppercase tracking-tight">{title}</span>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-widest">{reward} PEPE</span>
           </div>
         </div>
       </div>
-      <button className="h-10 px-6 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all shadow-lg shadow-slate-200">
+      <button className="h-9 px-5 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-slate-100">
         {actionLabel}
       </button>
     </div>
@@ -77,23 +77,23 @@ SocialTask.displayName = 'SocialTask';
 
 export const EarnCard = memo(({ icon, title, reward, desc, actionLabel, disabled }: { icon: ReactNode, title: string, reward: string, desc: string, actionLabel: string, disabled?: boolean }) => {
   return (
-    <div className={`card relative p-7 rounded-[40px] border-white/10 transition-all ${disabled ? 'opacity-40 grayscale pointer-events-none' : 'hover:scale-[1.02]'}`}>
-      <div className="flex items-center gap-5 mb-5">
-        <div className="w-14 h-14 bg-emerald-50 rounded-[22px] flex items-center justify-center text-emerald-600 border border-emerald-100/50 shadow-inner-soft">
+    <div className={`card relative p-6 rounded-[28px] border-white/10 transition-all ${disabled ? 'opacity-40 grayscale pointer-events-none' : 'hover:bg-slate-50/30'}`}>
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-11 h-11 bg-emerald-50 rounded-[16px] flex items-center justify-center text-emerald-600 border border-emerald-100/50 shadow-inner-soft">
           {icon}
         </div>
         <div>
-          <h3 className="text-sm font-black tracking-tight text-slate-900 uppercase leading-none mb-1.5">{title}</h3>
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-1 rounded-md">{reward} PEPE</span>
+          <h3 className="text-[13px] font-black tracking-tight text-slate-900 uppercase leading-none mb-1.5">{title}</h3>
+          <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md">{reward} PEPE</span>
         </div>
       </div>
-      <p className="text-[10px] text-slate-400 mb-6 leading-relaxed font-bold uppercase tracking-wider opacity-80">{desc}</p>
+      <p className="text-[9px] text-slate-400 mb-5 leading-relaxed font-bold uppercase tracking-wider opacity-80">{desc}</p>
       <button 
         disabled={disabled}
-        className={`w-full py-4.5 rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] transition-all active:scale-95 shadow-md ${
+        className={`w-full py-3.5 rounded-xl font-black text-[9px] uppercase tracking-[0.2em] transition-all active:scale-95 shadow-sm ${
           disabled 
             ? 'bg-slate-100 text-slate-400' 
-            : 'bg-slate-900 text-white shadow-slate-200'
+            : 'bg-slate-900 text-white shadow-slate-100'
         }`}
       >
         {actionLabel}

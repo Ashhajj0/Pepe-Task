@@ -78,66 +78,58 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
   };
 
   return (
-    <div className="px-6 py-10 space-y-10 min-h-full ambient-glow pb-36 no-scrollbar overflow-y-auto">
+    <div className="px-6 py-6 space-y-8 min-h-full ambient-glow pb-32 no-scrollbar overflow-y-auto">
       <div>
-        <h2 className="text-3xl font-black tracking-tighter text-slate-900 font-display italic uppercase">Peers</h2>
-        <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em] mt-2 opacity-60">Network Protocol</p>
+        <h2 className="text-2xl font-black tracking-tight text-slate-900 font-display uppercase italic">Friends</h2>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 opacity-60">Network Protocol</p>
       </div>
 
-      <div className="card rounded-[48px] p-10 border-white/10 relative overflow-hidden group">
-        <div className="flex flex-col items-center text-center space-y-6 mb-10 relative z-10">
-          <div className="w-16 h-16 rounded-[24px] bg-white flex items-center justify-center text-emerald-600 border border-slate-100 shadow-2xl group-hover:scale-110 transition-transform duration-500">
-            <Share2 size={24} />
+      <div className="card rounded-[32px] p-8 border-white/20 relative overflow-hidden group">
+        <div className="flex flex-col items-center text-center space-y-4 mb-8 relative z-10">
+          <div className="w-12 h-12 rounded-[18px] bg-white flex items-center justify-center text-emerald-600 border border-slate-100 shadow-xl group-hover:scale-110 transition-transform duration-500">
+            <Share2 size={20} />
           </div>
-          <div className="space-y-2">
-            <h3 className="text-sm font-black text-slate-900 uppercase tracking-tight">Expand Peer Cluster</h3>
-            <p className="text-[10px] text-slate-400 font-bold max-w-[220px] mx-auto uppercase tracking-wider leading-relaxed">
+          <div className="space-y-1">
+            <h3 className="text-[14px] font-black text-slate-900 uppercase tracking-tight">Expand Network</h3>
+            <p className="text-[9px] text-slate-400 font-bold max-w-[200px] mx-auto uppercase tracking-wide leading-relaxed">
               Unlock <span className="text-emerald-600 font-black">10% commission</span> on all peer activity.
             </p>
           </div>
         </div>
 
-        <div className="space-y-4 relative z-10">
+        <div className="space-y-3 relative z-10">
           <div className="relative">
             <input 
               readOnly 
               value={profile.referralLink || ''}
-              className="w-full bg-slate-50 border border-slate-100/50 rounded-2xl px-6 py-5 text-[10px] font-bold text-slate-400 focus:outline-none pr-14"
+              className="w-full bg-slate-50 border border-slate-100/50 rounded-xl px-4 py-4 text-[9px] font-bold text-slate-400 focus:outline-none pr-12"
             />
-            <button onClick={handleCopyLink} className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hover:bg-white rounded-xl transition-all">
-              {copySuccess ? <CheckCircle2 size={18} className="text-emerald-600" /> : <Copy size={18} className="text-slate-400" />}
+            <button onClick={handleCopyLink} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-white rounded-lg transition-all">
+              {copySuccess ? <CheckCircle2 size={16} className="text-emerald-600" /> : <Copy size={16} className="text-slate-400" />}
             </button>
           </div>
           
           <button 
             onClick={handleShare}
-            className="w-full h-16 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-3 shadow-2xl shadow-slate-300"
+            className="w-full h-14 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-slate-200"
           >
-            <Zap size={16} fill="currentColor" />
             Share Link
-          </button>
-
-          <button 
-            onClick={handleCopyCode}
-            className="w-full h-14 bg-white rounded-2xl border border-slate-100 flex items-center justify-center gap-3 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-slate-50 transition-all"
-          >
-            {copyCodeSuccess ? <span className="text-emerald-600">Code Copied</span> : <>ID: {profile.telegramId} • Copy Code</>}
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-5">
+      <div className="grid grid-cols-2 gap-4">
         <StatCard 
           label="Peers" 
           value={<Counter value={profile.totalReferrals || 0} />} 
           subValue={`${activeNodesCount} Active`} 
-          icon={<Users size={18} />} 
+          icon={<Users size={16} />} 
         />
         <StatCard 
-          label="Earnings" 
+          label="Earned" 
           value={<Counter value={profile.referralEarnings || 0} />} 
-          subValue={`+${estimatedDailyIncome.toFixed(0)} Est.`} 
-          icon={<Gem size={18} />} 
+          subValue={`Daily +${estimatedDailyIncome.toFixed(0)}`} 
+          icon={<Gem size={16} />} 
           highlight 
         />
       </div>
@@ -148,30 +140,28 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
           <ShieldCheck size={14} className="text-slate-200" />
         </div>
 
-        <div className="card rounded-[40px] p-8 border-white/10 bg-slate-50/50">
+        <div className="card rounded-[24px] p-6 border-white/10 bg-slate-50/50">
           {profile.referralProcessed || profile.referredBy ? (
-            <div className="flex items-center gap-5 p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                <CheckCircle2 size={20} className="text-emerald-500" />
-              </div>
+            <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
+              <CheckCircle2 size={16} className="text-emerald-500" />
               <div className="flex flex-col">
-                <span className="text-xs font-black text-emerald-600 uppercase tracking-tight">Verified Protocol</span>
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-0.5">Link Fully Operational</span>
+                <span className="text-[10px] font-black text-emerald-600 uppercase">Verified</span>
+                <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5 tracking-widest">Protocol Sync Complete</span>
               </div>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="relative">
                 <input 
                   type="text"
-                  placeholder="PEER ID"
+                  placeholder="ID"
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value)}
                   disabled={redeemStatus.type === 'loading'}
-                  className="w-full bg-white border border-slate-100 rounded-2xl px-6 py-5 text-[11px] font-black text-slate-900 focus:outline-none placeholder:text-slate-200 shadow-inner-soft"
+                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3.5 text-[10px] font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
                 />
                 {redeemStatus.type !== 'idle' && (
-                  <div className={`absolute right-5 top-1/2 -translate-y-1/2 text-[9px] font-black uppercase ${redeemStatus.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
+                  <div className={`absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase ${redeemStatus.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
                     {redeemStatus.message}
                   </div>
                 )}
@@ -179,9 +169,9 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
               <button 
                 onClick={handleRedeem}
                 disabled={!inputCode.trim() || redeemStatus.type === 'loading'}
-                className="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest active:scale-[0.98] transition-all shadow-xl shadow-slate-200"
+                className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all shadow-md shadow-slate-100"
               >
-                Claim 250 PEPE
+                Redeem Code
               </button>
             </div>
           )}
@@ -189,12 +179,12 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
       </div>
 
       {referrals.length > 0 && (
-        <div className="space-y-6 pt-4">
-          <div className="flex items-center gap-4 px-1">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Node Activity</h3>
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center gap-3 px-1">
+            <h3 className="text-[9px] font-black uppercase tracking-widest text-slate-400">Activity</h3>
             <div className="h-px flex-1 bg-slate-100"></div>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {referrals.map((record, i) => <ActivityRow key={i} record={record} />)}
           </div>
         </div>

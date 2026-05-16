@@ -31,7 +31,7 @@ html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: #fcfcfd;
+  background-color: #f8fafc;
   color: #0f172a;
   -webkit-tap-highlight-color: transparent;
   overflow: hidden;
@@ -40,22 +40,21 @@ html, body {
 
 .card {
   background: #ffffff;
-  border: 1px solid #f8fafc;
-  box-shadow: var(--shadow-premium);
+  border: 1px solid #f1f5f9;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
 }
 
 .ambient-glow {
   background: 
-    radial-gradient(circle at 50% -20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 0% 100%, rgba(59, 130, 246, 0.03) 0%, transparent 40%),
-    radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.03) 0%, transparent 40%);
+    radial-gradient(circle at 50% -10%, rgba(16, 185, 129, 0.05) 0%, transparent 60%),
+    radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.02) 0%, transparent 50%);
 }
 
 .no-scrollbar::-webkit-scrollbar {
