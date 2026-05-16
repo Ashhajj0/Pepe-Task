@@ -106,15 +106,15 @@ export default function App() {
 
   // Memoized derived values for performance
   const currencyDisplay = useMemo(() => {
-    if (!profile) return { symbol: '$', rate: 0.000008, formatted: '$0.00' };
+    if (!profile) return { symbol: '$', rate: 0.0000085, formatted: '$0.00' };
     const curr = profile.preferredCurrency || 'pepe';
     const isPepe = curr === 'pepe';
     
     if (isPepe) {
       return { 
         symbol: '$', 
-        rate: pepePrice || 0.000008, 
-        formatted: `≈ $${((safeNumber(profile.balance)) * (pepePrice || 0.000008)).toFixed(4)} USD` 
+        rate: pepePrice || 0.0000085, 
+        formatted: `≈ $${((safeNumber(profile.balance)) * (pepePrice || 0.0000085)).toFixed(4)} USD` 
       };
     }
 

@@ -54,7 +54,37 @@ async function startServer() {
       }
     };
 
-    // Attempt 1: DexScreener (Realtime On-Chain)
+    // Attempt 1: Binance (Reliable CEX)
+    try {
+      const binanceResponse = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=PEPEUSDT`, fetchOptions);
+      if (binanceResponse.ok) {
+        const binanceData = await binanceResponse.json();
+        if (binanceData.price) {
+          const baseUSD = parseFloat(binanceData.price);
+          
+          const sanitizedData: any = { 
+            pepe: { 
+              usd: baseUSD,
+              usd_24h_change: 0 // Binance basic ticker doesn't easily give 24h change in one call without 24hr endpoint
+            } 
+          };
+
+          Object.keys(FALLBACK_RATES).forEach(curr => {
+            if (curr !== 'usd') {
+              sanitizedData.pepe[curr.toLowerCase()] = baseUSD * FALLBACK_RATES[curr];
+            }
+          });
+
+          priceCache.data = sanitizedData;
+          priceCache.timestamp = now;
+          return res.json(sanitizedData);
+        }
+      }
+    } catch (e) {
+      console.warn("Binance API failed", e);
+    }
+
+    // Attempt 2: DexScreener (Realtime On-Chain)
     try {
       // Add random query to prevent AnyCast or upstream node caching
       const dexResponse = await fetch(`https://api.dexscreener.com/latest/dex/tokens/0x6982508145454ce325ddbe47a25d4ec3d2311933?nocache=${now}`, fetchOptions);
@@ -133,8 +163,8 @@ async function startServer() {
   });
 
   function getStaticFallback() {
-    // Updated fallback to be closer to current reality (May 2024 range)
-    const basePrice = 0.0000105;
+    // Updated fallback to be closer to reality ($0.0000085 range)
+    const basePrice = 0.0000085;
     const fallbackObj: any = { pepe: { usd: basePrice, usd_24h_change: 0.5 } };
     Object.keys(FALLBACK_RATES).forEach(curr => {
       fallbackObj.pepe[curr] = basePrice * FALLBACK_RATES[curr];

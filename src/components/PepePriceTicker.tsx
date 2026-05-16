@@ -23,7 +23,7 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
         const marketData = await currencyService.getLatestMarketData();
         
         // Use a more realistic fallback if the API is currently throttled
-        const FAIR_PRICE = 0.0000105;
+        const FAIR_PRICE = 0.0000085;
         
         let targetPrice = marketData?.pepe['usd'] || FAIR_PRICE;
         let targetId = 'usd';
