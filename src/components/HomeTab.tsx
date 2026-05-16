@@ -22,20 +22,21 @@ export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, da
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card rounded-[32px] p-6 text-center relative overflow-hidden border-white/40 shadow-sm bg-gradient-to-br from-white via-slate-50 to-emerald-50/10"
+        className="card rounded-[32px] p-6 text-center relative overflow-hidden border-white shadow-sm bg-gradient-to-br from-white via-slate-50/50 to-emerald-50/20"
       >
         <div className="flex flex-col items-center relative z-10">
-          <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-2 opacity-70">Secured Balance</span>
-          <h2 className="text-4xl font-black text-slate-900 font-sans tracking-tighter">
+          <span className="text-[10px] font-bold tracking-[0.1em] text-slate-400 uppercase mb-3 opacity-60">Secured Balance</span>
+          <h2 className="text-5xl font-bold text-black font-sans tracking-tighter">
             <Counter value={profile?.balance || 0} />
           </h2>
-          <div className="mt-3 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-full border border-slate-100 shadow-sm">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest tabular-nums">
+          <div className="mt-4 px-4 py-1.5 bg-white shadow-sm rounded-full border border-slate-100">
+            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-tight tabular-nums">
               {currencyDisplay?.rate ? (
-                <>
-                  {currencyDisplay.symbol}
+                <div className="flex items-center gap-1">
+                  <span>{currencyDisplay.symbol}</span>
                   <Counter value={(profile?.balance || 0) * (currencyDisplay?.rate || 0)} decimals={currencyDisplay.symbol === '$' ? 4 : 2} />
-                </>
+                  <span className="ml-1 opacity-40 text-[8px]">{profile?.preferredCurrency?.toUpperCase()}</span>
+                </div>
               ) : currencyDisplay.formatted}
             </span>
           </div>
@@ -65,7 +66,7 @@ export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, da
             <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 leading-none opacity-70">Level</span>
             <div className="flex items-center gap-2">
               <Gem size={14} className="text-emerald-500" />
-              <span className="text-xl font-black text-slate-900 font-display tracking-tight">LVL {profile?.level || 1}</span>
+              <span className="text-xl font-bold text-slate-900 font-sans tracking-tight">LVL {profile?.level || 1}</span>
             </div>
           </div>
         </motion.div>

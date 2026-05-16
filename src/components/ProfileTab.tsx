@@ -14,9 +14,9 @@ interface ProfileTabProps {
 export const ProfileTab = memo(({ user, profile, setIsCurrencyModalOpen }: ProfileTabProps) => {
   return (
     <div className="px-6 py-6 space-y-8 min-h-full ambient-glow pb-32 no-scrollbar overflow-y-auto">
-      <div>
-        <h2 className="text-2xl font-black tracking-tight text-slate-900 font-display uppercase italic text-center sm:text-left">Profile</h2>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 text-center sm:text-left opacity-60">Identity Management</p>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Node Configuration</h2>
+        <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest opacity-60 italic text-center sm:text-left">Identity Management</p>
       </div>
       
       <div className="space-y-6">
@@ -29,7 +29,7 @@ export const ProfileTab = memo(({ user, profile, setIsCurrencyModalOpen }: Profi
               />
           </div>
           <div className="flex-1 text-center sm:text-left relative z-10">
-            <h3 className="text-xl font-black text-slate-900 leading-tight font-display tracking-tight">{user?.first_name} {user?.last_name}</h3>
+            <h3 className="text-xl font-bold text-black leading-tight tracking-tight">{user?.first_name} {user?.last_name}</h3>
             <div className="flex items-center justify-center sm:justify-start gap-2 mt-3">
               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">@{user?.username || 'pepe_operator'}</span>
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-100/30">

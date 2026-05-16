@@ -119,22 +119,22 @@ export const NavItem = memo(({ icon, active, label, onClick }: { icon: ReactNode
   return (
     <button 
       onClick={onClick} 
-      className={`flex flex-col items-center justify-center gap-1.5 transition-all outline-none relative px-6 py-3 rounded-[24px] ${active ? 'text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50/50'}`}
+      className={`flex flex-col items-center justify-center pt-2 pb-1.5 transition-all outline-none relative w-full ${active ? 'text-slate-900 font-bold' : 'text-slate-400 hover:text-slate-600'}`}
     >
+      <div className={`transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${active ? 'scale-110 -translate-y-0.5' : 'scale-100'}`}>
+        {icon}
+      </div>
+      <span className={`text-[7px] uppercase tracking-widest shrink-0 transition-opacity duration-300 mt-1.5 ${active ? 'opacity-100' : 'opacity-40'}`}>
+        {label}
+      </span>
       {active && (
         <motion.div 
-          layoutId="activeNav"
-          className="absolute inset-0 bg-white shadow-soft-xl rounded-[24px] -z-10 border border-slate-100/50"
+          layoutId="activeNavPoint"
+          className="absolute -bottom-0.5 w-1 h-1 bg-slate-900 rounded-full"
           initial={false}
           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
         />
       )}
-      <div className={`transition-transform duration-500 cubic-bezier(0.34, 1.56, 0.64, 1) ${active ? 'scale-110 -translate-y-0.5' : 'scale-100'}`}>
-        {icon}
-      </div>
-      <span className={`text-[8px] font-black uppercase tracking-[0.15em] shrink-0 transition-all duration-300 ${active ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-0.5'}`}>
-        {label}
-      </span>
     </button>
   );
 });

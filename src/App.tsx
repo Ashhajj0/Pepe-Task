@@ -692,35 +692,33 @@ export default function App() {
         {/* Header */}
         <header 
           onClick={handleDebugToggle}
-          className="shrink-0 pt-6 px-6 pb-4 flex justify-between items-center z-[60] bg-white/60 backdrop-blur-2xl border-b border-slate-50/50 relative overflow-hidden"
+          className="shrink-0 pt-3 px-6 pb-2.5 flex justify-between items-center z-[60] bg-white/80 backdrop-blur-md border-b border-slate-100 relative"
         >
-          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/10 via-emerald-500/40 to-emerald-500/10"></div>
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white border border-slate-100 shadow-lg p-1 relative group">
-              <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden bg-white border border-slate-100 shadow-sm p-0.5">
               <img 
                 src="/logo.png" 
                 alt="Logo" 
-                className="w-full h-full object-contain relative z-10 transition-transform group-hover:scale-110"
+                className="w-full h-full object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/bottts-neutral/svg?seed=Pepe&backgroundColor=c0ebaf';
+                  (e.target as HTMLImageElement).src = 'https://api.dicebear.com/7.x/identicon/svg?seed=pepe';
                 }}
               />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-lg font-black tracking-tighter text-slate-900 leading-none font-sans uppercase">Pepe Earn</h1>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-[8px] font-bold text-slate-400 tracking-widest uppercase leading-none opacity-60">Professional Node</span>
+              <h1 className="text-sm font-bold tracking-tight text-slate-900 leading-none uppercase">Pepe Earn</h1>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                <span className="text-[7px] font-bold text-slate-400 tracking-widest uppercase leading-none">NODE ACTIVE</span>
               </div>
             </div>
           </div>
           
           <button 
             onClick={() => setIsCurrencyModalOpen(true)}
-            className="w-10 h-10 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-400 active:scale-90 transition-all shadow-sm hover:text-slate-900"
+            className="w-8 h-8 rounded-lg border border-slate-100 bg-white flex items-center justify-center text-slate-400 active:scale-90 transition-all shadow-sm hover:text-slate-900"
           >
-            <Settings size={18} strokeWidth={2.5} />
+            <Settings size={14} />
           </button>
         </header>
 
@@ -904,13 +902,13 @@ export default function App() {
         )}
 
         {/* Global Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-[100] px-6 pb-8 pointer-events-none sm:absolute">
-          <div className="glass rounded-[32px] p-2 grid grid-cols-5 shadow-[0_15px_40px_rgba(0,0,0,0.1)] border-white/70 pointer-events-auto">
-            <NavItem icon={<LayoutDashboard size={20} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
-            <NavItem icon={<Zap size={20} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
-            <NavItem icon={<Wallet size={20} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
-            <NavItem icon={<Users size={20} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
-            <NavItem icon={<UserIcon size={20} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
+        <div className="fixed bottom-0 left-0 right-0 z-[100] px-3 pb-6 pointer-events-none sm:absolute">
+          <div className="glass rounded-[20px] p-1 grid grid-cols-5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] border-white/60 pointer-events-auto">
+            <NavItem icon={<LayoutDashboard size={18} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
+            <NavItem icon={<Zap size={18} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
+            <NavItem icon={<Wallet size={18} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
+            <NavItem icon={<Users size={18} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
+            <NavItem icon={<UserIcon size={18} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
           </div>
         </div>
       </div>

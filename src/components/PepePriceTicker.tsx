@@ -103,7 +103,7 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-base font-black text-slate-900 leading-none">PEPE</h4>
+                <h4 className="text-base font-bold text-black leading-none">PEPE</h4>
                 <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-100/50">
                   <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
                   <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Live Feed</span>
@@ -113,7 +113,7 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-black text-slate-900 font-sans tabular-nums leading-none tracking-tighter">
+            <div className="text-xl font-bold text-black font-sans tabular-nums leading-none tracking-tighter">
               {priceData?.targetSymbol ?? ''}{priceData?.targetPrice?.toFixed(8) ?? '0.00'}
             </div>
             <div className={`flex items-center justify-end gap-1 mt-1.5 ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>

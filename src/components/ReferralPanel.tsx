@@ -79,9 +79,9 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
 
   return (
     <div className="px-6 py-6 space-y-8 min-h-full ambient-glow pb-32 no-scrollbar overflow-y-auto">
-      <div>
-        <h2 className="text-xl font-black tracking-tighter text-slate-900 font-sans uppercase italic">Peers & Friends</h2>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 opacity-60">Network Protocol</p>
+      <div className="flex flex-col gap-1">
+        <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Peers & Friends</h2>
+        <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest opacity-60 italic">Network Protocol</p>
       </div>
 
       <div className="card rounded-[32px] p-8 border-white/20 relative overflow-hidden group">
