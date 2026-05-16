@@ -125,7 +125,7 @@ export const getPepePriceIn = async (targetCurrency: string): Promise<number | n
     return data.pepe[cacheKey];
   }
 
-  const FAIR_PRICE = 0.0000085;
+  const FAIR_PRICE = 0.000004;
   const baseUSD = data?.pepe['usd'] || cachedRates['usd'] || FAIR_PRICE;
   const factor = FALLBACK_TO_USD[cacheKey] || 1;
   return baseUSD * factor;
@@ -133,7 +133,7 @@ export const getPepePriceIn = async (targetCurrency: string): Promise<number | n
 
 export const getFullPepeMarketData = async () => {
   const data = await getLatestMarketData();
-  const FAIR_PRICE = 0.0000085;
+  const FAIR_PRICE = 0.000004;
   return {
     usd: data?.pepe['usd'] || cachedRates['usd'] || FAIR_PRICE,
     usd_24h_change: data?.usd_24h_change ?? cached24hChange ?? 0

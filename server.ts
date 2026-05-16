@@ -163,9 +163,9 @@ async function startServer() {
   });
 
   function getStaticFallback() {
-    // Updated fallback to be closer to reality ($0.0000085 range)
-    const basePrice = 0.0000085;
-    const fallbackObj: any = { pepe: { usd: basePrice, usd_24h_change: 0.5 } };
+    // Updated fallback to user requested value
+    const basePrice = 0.000004;
+    const fallbackObj: any = { pepe: { usd: basePrice, usd_24h_change: 0 } };
     Object.keys(FALLBACK_RATES).forEach(curr => {
       fallbackObj.pepe[curr] = basePrice * FALLBACK_RATES[curr];
     });
