@@ -96,27 +96,27 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
         <div className="h-px flex-1 bg-zinc-900/50 ml-4"></div>
       </div>
 
-      <div className="card bg-slate-900 rounded-[32px] p-6 border-slate-800 relative overflow-hidden shadow-2xl">
-        <div className="absolute inset-0 bg-emerald-500/[0.03] pointer-events-none"></div>
+      <div className="card bg-white rounded-[32px] p-6 border-slate-100 relative overflow-hidden shadow-sm">
+        <div className="absolute inset-0 bg-emerald-500/[0.02] pointer-events-none"></div>
         
         <div className="flex items-center justify-between mb-6 relative z-10">
           <div className="flex items-center gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <h4 className="text-base font-black text-white leading-none">PEPE</h4>
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20">
+                <h4 className="text-base font-black text-slate-900 leading-none">PEPE</h4>
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-100/50">
                   <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
-                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Live</span>
+                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-tighter">Live Feed</span>
                 </div>
               </div>
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-1 block font-mono">PEPE_PROTOCOL</span>
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1 block font-mono">NET_ORACLE_V2</span>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-xl font-black text-white font-mono tabular-nums leading-none tracking-tighter">
+            <div className="text-xl font-black text-slate-900 font-sans tabular-nums leading-none tracking-tighter">
               {priceData?.targetSymbol ?? ''}{priceData?.targetPrice?.toFixed(8) ?? '0.00'}
             </div>
-            <div className={`flex items-center justify-end gap-1 mt-1.5 ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+            <div className={`flex items-center justify-end gap-1 mt-1.5 ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
               {isPositive ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
               <span className="text-[9px] font-black font-mono">
                 {isPositive ? '+' : ''}{(priceData?.usd_24h_change ?? 0).toFixed(2)}%
@@ -126,19 +126,19 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
         </div>
 
         <div className="space-y-4 relative z-10">
-          <div className="h-px bg-white/5 w-full"></div>
+          <div className="h-px bg-slate-50 w-full"></div>
           
           <div className="flex gap-3">
             <div className="shrink-0 mt-0.5">
-              <Info size={14} className="text-slate-600" />
+              <Info size={14} className="text-slate-300" />
             </div>
-            <div className="space-y-3">
-              <p className="text-[10px] text-slate-400 font-medium leading-relaxed opacity-70">
-                PEPE is established as the premier extraction protocol icon in the network space.
+            <div className="space-y-2">
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                Global extraction benchmark. Market data synchronized with major liquidity pools.
               </p>
               <div className="flex gap-2">
-                <span className="text-[8px] font-black text-slate-500 uppercase border border-white/5 px-2 py-0.5 rounded-md">ERC-20</span>
-                <span className="text-[8px] font-black text-emerald-500/50 uppercase border border-emerald-500/10 px-2 py-0.5 rounded-md">Deflationary</span>
+                <span className="text-[8px] font-black text-slate-400 uppercase border border-slate-50 bg-slate-50 px-2 py-0.5 rounded-md">MAINNET</span>
+                <span className="text-[8px] font-black text-emerald-600/60 uppercase border border-emerald-50 bg-emerald-50/50 px-2 py-0.5 rounded-md">VERIFIED</span>
               </div>
             </div>
           </div>

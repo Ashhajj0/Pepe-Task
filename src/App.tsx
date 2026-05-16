@@ -692,11 +692,11 @@ export default function App() {
         {/* Header */}
         <header 
           onClick={handleDebugToggle}
-          className="shrink-0 pt-10 px-8 pb-8 flex justify-between items-center z-[60] bg-white/60 backdrop-blur-2xl border-b border-slate-50/50 relative overflow-hidden"
+          className="shrink-0 pt-6 px-6 pb-4 flex justify-between items-center z-[60] bg-white/60 backdrop-blur-2xl border-b border-slate-50/50 relative overflow-hidden"
         >
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500/20 via-blue-500/10 to-emerald-500/20"></div>
-          <div className="flex items-center gap-5">
-            <div className="w-13 h-13 rounded-2xl flex items-center justify-center overflow-hidden bg-white border border-slate-100 shadow-2xl p-1 relative group">
+          <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-emerald-500/10 via-emerald-500/40 to-emerald-500/10"></div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden bg-white border border-slate-100 shadow-lg p-1 relative group">
               <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               <img 
                 src="/logo.png" 
@@ -708,19 +708,19 @@ export default function App() {
               />
             </div>
             <div className="flex flex-col">
-              <h1 className="text-xl font-black tracking-tighter text-slate-900 leading-none font-display uppercase italic">Pepe Earn</h1>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-[9px] font-black text-slate-400 tracking-[0.3em] uppercase leading-none opacity-60">Mainnet Protocol</span>
+              <h1 className="text-lg font-black tracking-tighter text-slate-900 leading-none font-sans uppercase">Pepe Earn</h1>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="text-[8px] font-bold text-slate-400 tracking-widest uppercase leading-none opacity-60">Professional Node</span>
               </div>
             </div>
           </div>
           
           <button 
             onClick={() => setIsCurrencyModalOpen(true)}
-            className="w-13 h-13 rounded-2xl border border-slate-100 bg-white flex items-center justify-center text-slate-400 active:scale-90 transition-all shadow-xl shadow-slate-100/50 hover:shadow-2xl hover:text-slate-900"
+            className="w-10 h-10 rounded-xl border border-slate-100 bg-white flex items-center justify-center text-slate-400 active:scale-90 transition-all shadow-sm hover:text-slate-900"
           >
-            <Settings size={22} strokeWidth={2.5} />
+            <Settings size={18} strokeWidth={2.5} />
           </button>
         </header>
 
@@ -904,13 +904,13 @@ export default function App() {
         )}
 
         {/* Global Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-[100] px-8 pb-10 pointer-events-none sm:absolute">
-          <div className="glass rounded-[40px] p-2.5 flex items-center justify-around shadow-[0_20px_50px_rgba(0,0,0,0.15)] border-white/70 pointer-events-auto">
-            <NavItem icon={<LayoutDashboard size={22} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
-            <NavItem icon={<Zap size={22} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
-            <NavItem icon={<Wallet size={22} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
-            <NavItem icon={<Users size={22} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
-            <NavItem icon={<UserIcon size={22} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
+        <div className="fixed bottom-0 left-0 right-0 z-[100] px-6 pb-8 pointer-events-none sm:absolute">
+          <div className="glass rounded-[32px] p-2 grid grid-cols-5 shadow-[0_15px_40px_rgba(0,0,0,0.1)] border-white/70 pointer-events-auto">
+            <NavItem icon={<LayoutDashboard size={20} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
+            <NavItem icon={<Zap size={20} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
+            <NavItem icon={<Wallet size={20} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
+            <NavItem icon={<Users size={20} />} active={activeTab === 'friends'} label="Peers" onClick={() => setActiveTab('friends')} />
+            <NavItem icon={<UserIcon size={20} />} active={activeTab === 'profile'} label="Node" onClick={() => setActiveTab('profile')} />
           </div>
         </div>
       </div>

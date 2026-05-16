@@ -18,8 +18,8 @@ export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaini
   return (
     <div className="px-6 py-6 space-y-8 pb-32 min-h-full ambient-glow no-scrollbar overflow-y-auto">
       <div>
-        <h2 className="text-2xl font-black tracking-tight text-slate-900 font-display uppercase italic">Earn</h2>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Extraction Protocol</p>
+        <h2 className="text-xl font-black tracking-tighter text-slate-900 font-sans uppercase italic">Earn Credits</h2>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 opacity-60">Extraction Protocol</p>
       </div>
       
       <div className="space-y-6">

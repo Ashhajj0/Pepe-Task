@@ -3,7 +3,7 @@ import { memo } from 'react';
 import { UserProfile, TelegramUser } from '../types';
 import { Counter } from './UIElements';
 import { safeNumber, safeString } from '../lib/utils/firestore';
-import { Trophy, Activity, Gem, ChevronRight } from 'lucide-react';
+import { Trophy, Activity, Gem, ChevronRight, Users } from 'lucide-react';
 
 interface HomeTabProps {
   user: TelegramUser | null;
@@ -22,14 +22,14 @@ export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, da
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="card rounded-[32px] p-6 text-center relative overflow-hidden border-white/40 shadow-sm"
+        className="card rounded-[32px] p-6 text-center relative overflow-hidden border-white/40 shadow-sm bg-gradient-to-br from-white via-slate-50 to-emerald-50/10"
       >
-        <div className="flex flex-col items-center">
-          <span className="text-[10px] font-black tracking-[0.3em] text-slate-400 uppercase mb-2">Balance</span>
-          <h2 className="text-4xl font-black text-slate-900 font-display tracking-tight">
+        <div className="flex flex-col items-center relative z-10">
+          <span className="text-[10px] font-black tracking-[0.2em] text-slate-400 uppercase mb-2 opacity-70">Secured Balance</span>
+          <h2 className="text-4xl font-black text-slate-900 font-sans tracking-tighter">
             <Counter value={profile?.balance || 0} />
           </h2>
-          <div className="mt-2 px-3 py-1 bg-slate-50 rounded-full border border-slate-100 shadow-inner-soft">
+          <div className="mt-3 px-3 py-1 bg-white/60 backdrop-blur-sm rounded-full border border-slate-100 shadow-sm">
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest tabular-nums">
               {currencyDisplay?.rate ? (
                 `${currencyDisplay.symbol}${(profile?.balance || 0) * (currencyDisplay?.rate || 0)}`
@@ -46,10 +46,10 @@ export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, da
           className="card rounded-[24px] p-5 relative overflow-hidden group border-white/10"
         >
           <div className="flex flex-col relative z-10">
-            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 leading-none opacity-70">Rank</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 leading-none opacity-70">Total Refers</span>
             <div className="flex items-center gap-2">
-              <Trophy size={14} className="text-amber-500" />
-              <span className="text-xl font-black text-slate-900 font-display tracking-tight">#{userRank}</span>
+              <Users size={14} className="text-blue-500" />
+              <span className="text-xl font-black text-slate-900 font-sans tracking-tight">{safeNumber(profile?.totalReferrals, 0)}</span>
             </div>
           </div>
         </motion.div>

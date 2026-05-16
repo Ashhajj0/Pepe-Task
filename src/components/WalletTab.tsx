@@ -13,28 +13,37 @@ export const WalletTab = memo(({ profile, currencyDisplay }: WalletTabProps) => 
   return (
     <div className="px-6 py-6 space-y-8 min-h-full ambient-glow pb-32 no-scrollbar overflow-y-auto">
       <div>
-        <h2 className="text-2xl font-black tracking-tight text-slate-900 font-display uppercase italic">Wallet</h2>
-        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 opacity-60">Digital Assets</p>
+        <h2 className="text-xl font-black tracking-tighter text-slate-900 font-sans uppercase italic">Asset Wallet</h2>
+        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 opacity-60">Digital Custody</p>
       </div>
       
-      <div className="card rounded-[32px] p-8 text-center flex flex-col items-center relative overflow-hidden border-white/20">
-        <div className="w-16 h-16 rounded-[24px] bg-slate-50 flex items-center justify-center mb-6 border border-slate-100 text-slate-300 shadow-inner-soft">
-          <Wallet size={28} />
+      <div className="card rounded-[32px] p-6 relative overflow-hidden border-white/40 shadow-sm bg-gradient-to-br from-white via-slate-50 to-emerald-50/10">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.03] rotate-12">
+          <Wallet size={120} />
         </div>
         
-        <div className="flex flex-col mb-8 relative z-10 text-center">
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3">Balance</span>
-          <h2 className="text-4xl font-black text-slate-900 mb-2 font-display">
-            <Counter value={safeNumber(profile?.balance)} />
-          </h2>
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100/30 w-fit mx-auto">
-             {currencyDisplay.formatted}
-          </span>
+        <div className="flex flex-col relative z-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center border border-slate-100 text-slate-400 shadow-sm">
+              <Wallet size={20} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">Net Worth</span>
+              <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-tight mt-1">{currencyDisplay.formatted}</span>
+            </div>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-4xl font-black text-slate-900 font-sans tracking-tighter mb-1">
+              <Counter value={safeNumber(profile?.balance)} />
+            </h2>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">PEPE Credits</span>
+          </div>
+          
+          <button className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all shadow-md shadow-slate-100 hover:bg-slate-800">
+            Request Sync
+          </button>
         </div>
-        
-        <button className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all shadow-lg shadow-slate-200">
-          Sync Withdrawal
-        </button>
       </div>
       
       <div className="glass p-6 rounded-[28px] border-white/60 shadow-sm flex gap-6">
