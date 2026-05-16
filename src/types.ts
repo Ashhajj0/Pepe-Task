@@ -9,6 +9,7 @@ export interface TelegramUser {
 }
 
 export interface UserProfile {
+  id?: string;
   telegramId: number;
   username: string;
   first_name: string;

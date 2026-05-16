@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { AdminService } from './adminService';
 import { UserProfile } from '../types';
+import { db } from '../lib/firebase';
+import { doc } from 'firebase/firestore';
 import { 
   Search, Filter, Edit2, Ban, ShieldCheck, 
   ChevronLeft, ChevronRight, MoreHorizontal,
-  Mail, MessageSquare, ExternalLink
+  Mail, MessageSquare, ExternalLink, X
 } from 'lucide-react';
+import { motion } from 'motion/react';
 
 export const UsersManagement: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -25,31 +28,179 @@ export const UsersManagement: React.FC = () => {
     u.telegramId?.toString().includes(search)
   );
 
-  const handleUpdateBalance = (userId: string, current: number) => {
-    const val = prompt('Enter new balance:', current.toString());
-    if (val !== null) {
-      const num = parseFloat(val);
-      if (!isNaN(num)) {
-        AdminService.updateUserBalance(userId, num);
-      }
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+
+  const handleEditUser = (user: UserProfile) => {
+    setEditingUser({ ...user });
+  };
+
+  const handleSaveUser = async () => {
+    if (!editingUser) return;
+    try {
+      const { id, ...data } = editingUser;
+      await AdminService.updateUser(id!, data);
+      setEditingUser(null);
+      alert('User updated successfully');
+    } catch (e) {
+      alert('Failed to update user: ' + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
+  const UserEditModal = () => {
+    if (!editingUser) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        >
+          <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-white">
+                <Edit2 size={20} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">Edit User Details</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">@{editingUser.username || 'unknown member'}</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => setEditingUser(null)}
+              className="p-3 hover:bg-slate-100 rounded-2xl text-slate-400 transition-colors"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Username (without @)</label>
+                <input 
+                  type="text"
+                  value={editingUser.username || ''}
+                  onChange={(e) => setEditingUser({ ...editingUser, username: e.target.value })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Balance (PEPE)</label>
+                <input 
+                  type="number"
+                  value={editingUser.balance}
+                  onChange={(e) => setEditingUser({ ...editingUser, balance: parseFloat(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Total Referrals</label>
+                <input 
+                  type="number"
+                  value={editingUser.totalReferrals || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, totalReferrals: parseInt(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Total Ads Watched</label>
+                <input 
+                  type="number"
+                  value={editingUser.tasksCompleted || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, tasksCompleted: parseInt(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">User Level</label>
+                <input 
+                  type="number"
+                  value={editingUser.level || 1}
+                  onChange={(e) => setEditingUser({ ...editingUser, level: parseInt(e.target.value) || 1 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-slate-100 grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => setEditingUser(null)}
+                className="h-14 rounded-2xl border border-slate-200 text-xs font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveUser}
+                className="h-14 rounded-2xl bg-black text-white text-xs font-bold uppercase tracking-widest hover:bg-slate-800 shadow-xl shadow-black/10 transition-all"
+              >
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  };
+
+  const handleDeleteUser = (user: UserProfile) => {
+    if (confirm(`CRITICAL: Are you sure you want to PERMANENTLY DELETE @${user.username}? This cannot be undone.`)) {
+      AdminService.deleteUser(user.id!);
     }
   };
 
   const handleToggleBan = (user: UserProfile) => {
     if (confirm(`Are you sure you want to ${user.isBanned ? 'unban' : 'ban'} @${user.username}?`)) {
-      AdminService.setBanStatus(user.telegramId!.toString(), !user.isBanned);
+      AdminService.setBanStatus(user.id!, !user.isBanned);
+    }
+  };
+
+  const handleAddUser = async () => {
+    const telegramId = prompt('Enter Telegram ID:');
+    if (!telegramId) return;
+    const username = prompt('Enter Username (without @):');
+    if (!username) return;
+    const balance = parseFloat(prompt('Enter initial balance:', '0') || '0');
+    
+    try {
+      // In AdminService we should have an addUser or similar
+      const userRef = doc(db, 'users', telegramId);
+      const { setDoc, serverTimestamp } = await import('firebase/firestore');
+      await setDoc(userRef, {
+        telegramId: parseInt(telegramId),
+        username,
+        balance,
+        totalReferrals: 0,
+        level: 1,
+        tasksCompleted: 0,
+        lastLogin: serverTimestamp(),
+        createdAt: serverTimestamp(),
+        isBanned: false
+      });
+      alert('User added successfully');
+      AdminService.logAction('ADD_USER_MANUAL', telegramId, { username, balance });
+    } catch (e) {
+      alert('Failed to add user: ' + (e instanceof Error ? e.message : String(e)));
     }
   };
 
   return (
     <div className="space-y-8">
+      <UserEditModal />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Users Management</h2>
           <p className="text-slate-400 font-medium">Manage player accounts and balances</p>
         </div>
         
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={handleAddUser}
+            className="h-12 px-6 bg-black text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all flex items-center gap-2"
+          >
+            <ShieldCheck size={18} />
+            Add User
+          </button>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
             <input 
@@ -138,19 +289,25 @@ export const UsersManagement: React.FC = () => {
                     <td className="p-6">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button 
-                          onClick={() => handleUpdateBalance(user.telegramId!.toString(), user.balance || 0)}
+                          onClick={() => handleEditUser(user)}
                           className="p-2 hover:bg-black hover:text-white rounded-lg transition-all text-slate-400"
+                          title="Edit User"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => handleToggleBan(user)}
                           className={`p-2 rounded-lg transition-all ${user.isBanned ? 'text-emerald-500 hover:bg-emerald-50' : 'text-red-400 hover:bg-red-50'}`}
+                          title={user.isBanned ? 'Unban' : 'Ban'}
                         >
                           <Ban size={16} />
                         </button>
-                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-all text-slate-400">
-                          <MoreHorizontal size={16} />
+                        <button 
+                          onClick={() => handleDeleteUser(user)}
+                          className="p-2 hover:bg-red-500 hover:text-white rounded-lg transition-all text-red-300"
+                          title="Delete Permanently"
+                        >
+                          <X size={16} />
                         </button>
                       </div>
                     </td>

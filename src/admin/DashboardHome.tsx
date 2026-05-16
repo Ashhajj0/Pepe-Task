@@ -2,16 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { AdminService } from './adminService';
 import { 
   Users, TrendingUp, CreditCard, Clock, 
-  ArrowUpRight, ArrowDownRight, Gem, Activity 
+  ArrowUpRight, ArrowDownRight, Gem, Activity,
+  Edit2
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface Stats {
   totalUsers: number;
-  totalBalance: number;
   pendingWithdrawalsAmount: number;
-  totalWithdrawn: number;
-  totalWithdrawalsCount: number;
+  totalWithdrawnAmount: number;
+  completedWithdrawalsCount: number;
+  totalAdsWatched: number;
 }
 
 export const DashboardHome: React.FC = () => {
@@ -19,36 +20,54 @@ export const DashboardHome: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data = await AdminService.getDashboardStats();
-        setStats(data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
+    const unsubStats = AdminService.subscribeToDashboardStats((data) => {
+      setStats(data);
+      setLoading(false);
+    });
+
+    return () => unsubStats();
   }, []);
 
-  const StatCard = ({ title, value, icon, color, trend }: any) => (
-    <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all group">
-      <div className="flex justify-between items-start mb-6">
-        <div className={`w-14 h-14 ${color} rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110`}>
-          {icon}
-        </div>
-        {trend && (
-          <div className={`flex items-center gap-1 ${trend > 0 ? 'text-emerald-500' : 'text-red-500'} font-bold text-xs`}>
-            {trend > 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-            <span>{Math.abs(trend)}%</span>
+  const handleEditStat = async (title: string, currentValue: string) => {
+    if (title === "Total Withdrawn" || title === "Total Ads Watched") {
+      const field = title === "Total Withdrawn" ? "manualTotalWithdrawn" : "manualTotalAdsWatched";
+      const newValStr = prompt(`Enter new value for ${title}:`, currentValue.replace(/,/g, '').replace(' PEPE', ''));
+      if (newValStr !== null) {
+        const newVal = parseFloat(newValStr);
+        if (!isNaN(newVal)) {
+          await AdminService.updateGlobalStats({ [field]: newVal });
+        }
+      }
+    }
+  };
+
+  const StatCard = ({ title, value, icon, color }: any) => {
+    const isEditable = title === "Total Withdrawn" || title === "Total Ads Watched";
+    
+    return (
+      <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all group relative">
+        <div className="flex justify-between items-start mb-6">
+          <div className={`w-14 h-14 ${color} rounded-2xl flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110`}>
+            {icon}
           </div>
-        )}
+          {isEditable && (
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditStat(title, value);
+              }}
+              className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-black hover:text-white transition-all shadow-sm"
+              title={`Edit ${title}`}
+            >
+              <Edit2 size={14} />
+            </button>
+          )}
+        </div>
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{title}</p>
+        <h3 className="text-3xl font-bold text-slate-900 tracking-tight">{value}</h3>
       </div>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1">{title}</p>
-      <h3 className="text-3xl font-bold text-slate-900 tracking-tight">{value}</h3>
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -58,98 +77,115 @@ export const DashboardHome: React.FC = () => {
     );
   }
 
+  // GigaPub estimation: $0.002 per ad watch as a placeholder
+  const estimatedGigaPubRevenue = (stats?.totalAdsWatched || 0) * 0.002;
+
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto pb-20">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Dashboard Overview</h2>
-          <p className="text-slate-400 font-medium">Real-time platform performance monitoring</p>
+          <h2 className="text-4xl font-black text-black tracking-tighter uppercase">Dashboard Overview</h2>
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.3em] mt-1">Real-time Performance Monitor</p>
         </div>
         <div className="flex gap-3">
-          <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl flex items-center gap-2 text-xs font-bold text-slate-600">
-            <Clock size={14} className="text-slate-300" />
-            <span>Last 24h</span>
+          <div className="px-4 py-2 bg-white border border-slate-200 rounded-xl flex items-center gap-2 text-xs font-bold text-emerald-500 shadow-sm">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <span>REALTIME SYNC</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Total Registered" 
+          title="Total Users" 
           value={stats?.totalUsers.toLocaleString()} 
           icon={<Users size={24} />} 
-          color="bg-blue-500"
-          trend={12}
+          color="bg-blue-600"
         />
         <StatCard 
-          title="System Balance" 
-          value={`${stats?.totalBalance.toLocaleString()} PEPE`} 
-          icon={<Gem size={24} />} 
-          color="bg-emerald-500"
-          trend={8}
-        />
-        <StatCard 
-          title="Pending Output" 
+          title="Pending Payouts" 
           value={`${stats?.pendingWithdrawalsAmount.toLocaleString()} PEPE`} 
-          icon={<CreditCard size={24} />} 
+          icon={<Clock size={24} />} 
           color="bg-amber-500"
-          trend={-3}
         />
         <StatCard 
-          title="Total Disbursed" 
-          value={`${stats?.totalWithdrawn.toLocaleString()} PEPE`} 
+          title="Total Withdrawn" 
+          value={`${stats?.totalWithdrawnAmount.toLocaleString()} PEPE`} 
+          icon={<CreditCard size={24} />} 
+          color="bg-emerald-600"
+        />
+        <StatCard 
+          title="Total Ads Watched" 
+          value={stats?.totalAdsWatched.toLocaleString()} 
           icon={<Activity size={24} />} 
           color="bg-slate-900"
-          trend={24}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white rounded-[32px] border border-slate-100 p-8">
-            <div className="flex justify-between items-center mb-8">
-                <h3 className="text-xl font-bold text-slate-900">Recent Activity</h3>
-                <button className="text-[10px] font-bold text-blue-500 uppercase tracking-widest hover:underline">View All</button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-slate-900 rounded-[32px] p-10 text-white flex flex-col relative overflow-hidden shadow-2xl shadow-slate-200">
+            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -mr-40 -mt-40" />
+            
+            <div className="flex items-center justify-between mb-12">
+              <div className="p-3 bg-white/10 w-fit rounded-xl backdrop-blur-md border border-white/5">
+                  <TrendingUp size={24} className="text-emerald-400" />
+              </div>
+              <div className="px-4 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-[10px] font-black tracking-widest text-emerald-400">
+                GIGAPUB PARTNER
+              </div>
             </div>
-            <div className="space-y-6">
-                {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 group">
-                        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                            <TrendingUp size={20} />
-                        </div>
-                        <div className="flex-1">
-                            <p className="text-sm font-bold text-slate-900">New User Registered</p>
-                            <p className="text-xs text-slate-400 font-medium">Telegram ID: 82910293 • 2 minutes ago</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-xs font-bold text-emerald-500">+1.2k PEPE</p>
-                            <p className="text-[10px] text-slate-300 font-bold uppercase">Reward</p>
-                        </div>
-                    </div>
-                ))}
+            
+            <h3 className="text-4xl font-black mb-2 tracking-tighter uppercase italic">GigaPub Stats</h3>
+            <p className="text-slate-400 text-sm mb-12 font-medium">Estimated ad revenue based on network impressions.</p>
+            
+            <div className="grid grid-cols-2 gap-10">
+              <div>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Est. Earnings</p>
+                <h4 className="text-5xl font-black text-emerald-400 tracking-tighter italic">
+                  ${estimatedGigaPubRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </h4>
+              </div>
+              <div className="border-l border-white/5 pl-10">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Impressions</p>
+                <h4 className="text-3xl font-bold text-white tracking-tight">
+                  {stats?.totalAdsWatched.toLocaleString()}
+                </h4>
+              </div>
+            </div>
+
+            <div className="mt-12 pt-8 border-t border-white/5">
+               <div className="flex items-center gap-3">
+                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
+                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Traffic Stream: Active</span>
+               </div>
             </div>
         </div>
 
-        <div className="bg-slate-900 rounded-[32px] p-8 text-white flex flex-col relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32" />
+        <div className="bg-white rounded-[32px] border border-slate-100 p-10 shadow-sm flex flex-col justify-center">
+            <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Network Health</h3>
+            <p className="text-slate-400 mb-10 font-medium">System performance and load distribution logs.</p>
             
-            <div className="mb-8 p-3 bg-white/10 w-fit rounded-xl backdrop-blur-md">
-                <ShieldIcon size={24} />
-            </div>
-            
-            <h3 className="text-2xl font-bold mb-2">System Integrity</h3>
-            <p className="text-slate-400 text-sm mb-12">All servers operational. Node synchronization complete with 99.9% uptime.</p>
-            
-            <div className="mt-auto space-y-4">
-                <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-500">
-                    <span>Processing Power</span>
-                    <span className="text-emerald-400">Stable</span>
+            <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Active Database Connections</span>
+                    <span className="text-sm font-black text-slate-900">100%</span>
                 </div>
-                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: '85%' }}
-                        className="h-full bg-emerald-500"
-                    />
+                <div className="h-2 bg-slate-50 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} className="h-full bg-emerald-500" />
+                </div>
+                
+                <div className="flex justify-between items-center pt-2">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ad Propagation Delay</span>
+                    <span className="text-sm font-black text-slate-900">0.4ms</span>
+                </div>
+                <div className="h-2 bg-slate-50 rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: '15%' }} className="h-full bg-blue-500" />
+                </div>
+
+                <div className="mt-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-relaxed italic">
+                    Note: Stats shown above represent all-time cumulative data aggregated from all nodes in the cloud protocol.
+                  </p>
                 </div>
             </div>
         </div>

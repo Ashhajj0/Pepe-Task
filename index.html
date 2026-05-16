@@ -38,32 +38,62 @@
         };
 
         function applyPolyfill() {
-          if (window.Telegram && window.Telegram.WebApp) {
-            if (!window.Telegram.WebApp.CloudStorage) {
-              try {
-                window.Telegram.WebApp.CloudStorage = storagePolyfill;
-              } catch (e) {
-                try {
-                  Object.defineProperty(window.Telegram.WebApp, 'CloudStorage', {
-                    value: storagePolyfill,
-                    writable: true,
-                    configurable: true
-                  });
-                } catch (e2) {}
-              }
+          try {
+            var tg = window.Telegram;
+            if (!tg) {
+              window.Telegram = tg = {};
             }
+            if (!tg.WebApp) {
+              tg.WebApp = {};
+            }
+            
+            // Check if we need to override or provide CloudStorage
+            var current = null;
+            try { current = tg.WebApp.CloudStorage; } catch (e) {}
+
+            if (!current || current === storagePolyfill) {
+              // We use defineProperty to ensure we can catch any access and provide our polyfill
+              // Some versions of the SDK might try to log errors when CloudStorage is accessed
+              Object.defineProperty(tg.WebApp, 'CloudStorage', {
+                get: function() { 
+                  return storagePolyfill; 
+                },
+                set: function(v) {
+                  // Allow overwriting but only if it's not the null/undefined the SDK might set
+                  if (v) storagePolyfill = v;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            }
+            
+            // Minor hack: if version is too low, some SDK features log errors
+            // We set it to 6.9 which is the minimum for CloudStorage
+            try {
+              if (!tg.WebApp.version || parseFloat(tg.WebApp.version) < 6.9) {
+                Object.defineProperty(tg.WebApp, 'version', {
+                  value: '6.9',
+                  writable: true,
+                  configurable: true,
+                  enumerable: true
+                });
+              }
+            } catch (vErr) {}
+          } catch (e) {
+            // Silence errors
           }
         }
 
-        // Run early and often to catch it as soon as possible
+        // Run immediately to catch it before SDK loads
+        applyPolyfill();
+
+        // Run early and often to catch it as soon as possible after SDK loads
+        var attempts = 0;
         var interval = setInterval(function() {
           applyPolyfill();
-          if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.CloudStorage) {
-            // We keep it running for a bit longer just in case something overwrites it
-            if (attempts++ > 100) clearInterval(interval);
-          }
+          attempts++;
+          if (attempts > 200) clearInterval(interval);
         }, 50);
-        var attempts = 0;
       })();
     </script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>

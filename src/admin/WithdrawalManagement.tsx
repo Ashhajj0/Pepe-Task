@@ -21,139 +21,105 @@ export const WithdrawalManagement: React.FC = () => {
     return () => unsubscribe();
   }, []);
 
-  const handleAction = async (id: string, status: WithdrawalStatus) => {
-    // Note: status 'pending' is start state, 'approved', 'rejected', 'completed' are actions
-    if (status === 'pending') return; 
-
-    let note = '';
-    if (status === 'rejected') {
-      note = prompt('Reason for rejection:') || 'Rejected by admin';
-    } else if (status === 'approved') {
-      note = 'Request approved for processing';
-    } else if (status === 'completed') {
-      note = 'Withdrawal amount sent to wallet';
-    }
+  const handleStatusChange = async (id: string, currentStatus: WithdrawalStatus, newStatus: WithdrawalStatus) => {
+    if (currentStatus === newStatus) return;
+    if (newStatus === 'pending') return; // Cannot go back to pending via this UI
 
     setProcessingId(id);
     try {
-      if (status === 'approved' || status === 'rejected' || status === 'completed') {
-        await AdminService.processWithdrawal(id, status, note);
-      }
+      const note = newStatus === 'completed' ? 'Withdrawal processed' : 'Processed by admin';
+      await AdminService.processWithdrawal(id, newStatus, note);
     } catch (e) {
-      alert('Failed to process withdrawal');
+      alert('Failed to update status');
     } finally {
       setProcessingId(null);
     }
   };
 
-  const getStatusColor = (status: WithdrawalStatus) => {
-    switch (status) {
-      case 'pending': return 'bg-amber-50 text-amber-500 border-amber-100';
-      case 'approved': return 'bg-blue-50 text-blue-500 border-blue-100';
-      case 'completed': return 'bg-emerald-50 text-emerald-500 border-emerald-100';
-      case 'rejected': return 'bg-red-50 text-red-500 border-red-100';
-    }
-  };
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       <div>
-        <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Withdrawal Requests</h2>
-        <p className="text-slate-400 font-medium">Verify and process payout requests</p>
+        <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Payout Queue</h2>
+        <p className="text-slate-400 font-medium tracking-tight">Review and initialize user fund transfers</p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {withdrawals.length === 0 ? (
-          <div className="col-span-full py-32 flex flex-col items-center justify-center opacity-20">
-            <History size={64} className="mb-4" />
-            <p className="text-xl font-bold uppercase tracking-widest">No requests found</p>
-          </div>
-        ) : (
-          withdrawals.map((req) => (
-            <div key={req.id} className="bg-white rounded-[32px] border border-slate-100 p-8 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all flex flex-col gap-6 group">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
-                    {req.withdrawalMethod === 'BEP20' ? <Wallet size={24} /> : <CreditCard size={24} />}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                        @{req.telegramUsername}
-                        {req.status === 'completed' && <CheckCircle2 size={16} className="text-emerald-500" />}
-                    </h3>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ID: {req.userId}</p>
-                  </div>
-                </div>
-                <div className={`px-4 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-widest ${getStatusColor(req.status)}`}>
-                  {req.status}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                <div className="flex flex-col gap-1">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Requested Amount</p>
-                  <p className="text-lg font-bold text-black">{req.amount?.toLocaleString()} PEPE</p>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Method</p>
-                  <p className="text-sm font-bold text-slate-700">{req.withdrawalMethod}</p>
-                </div>
-                <div className="col-span-2 flex flex-col gap-1 mt-2">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{req.withdrawalMethod === 'BEP20' ? 'Wallet Address' : 'Binance ID'}</p>
-                  <p className="text-xs font-mono font-bold text-slate-500 break-all bg-white p-3 rounded-lg border border-slate-100">{req.walletAddressOrBinanceId}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-slate-300">
-                  <Clock size={14} />
-                  <span className="text-[10px] font-bold uppercase tracking-tight">
-                    {safeDate(req.createdAt).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="flex gap-2">
-                  {req.status === 'pending' && (
-                    <>
-                      <button 
-                        disabled={processingId === req.id}
-                        onClick={() => handleAction(req.id!, 'rejected')}
-                        className="h-10 px-4 bg-white border border-red-100 text-red-500 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
+      <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">User Details</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Payout Amount</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Protocol Address</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {withdrawals.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-32 text-center">
+                    <History size={48} className="mx-auto mb-4 opacity-10" />
+                    <p className="text-xs font-bold text-slate-300 uppercase tracking-[0.2em]">Queue Empty</p>
+                  </td>
+                </tr>
+              ) : (
+                withdrawals.map((req) => (
+                  <tr key={req.id} className="border-t border-slate-50 hover:bg-slate-50/50 transition-colors">
+                    <td className="p-6">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900">@{req.telegramUsername}</span>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: {req.userId}</span>
+                      </div>
+                    </td>
+                    <td className="p-6">
+                      <span className="text-lg font-black text-emerald-600 tabular-nums tracking-tight">
+                        {req.amount?.toLocaleString()} PEPE
+                      </span>
+                    </td>
+                    <td className="p-6">
+                      <div 
+                        onClick={() => {
+                          navigator.clipboard.writeText(req.walletAddressOrBinanceId);
+                          alert('Address copied to clipboard!');
+                        }}
+                        className="max-w-[200px] truncate bg-slate-50 px-3 py-2 rounded-lg text-xs font-mono font-medium text-slate-500 border border-slate-100 shadow-inner cursor-pointer hover:bg-slate-100 transition-colors" 
+                        title="Click to copy address"
                       >
-                        Reject
-                      </button>
-                      <button 
-                        disabled={processingId === req.id}
-                        onClick={() => handleAction(req.id!, 'approved')}
-                        className="h-10 px-4 bg-blue-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50"
-                      >
-                        Approve
-                      </button>
-                    </>
-                  )}
-
-                  {req.status === 'approved' && (
-                    <button 
-                      disabled={processingId === req.id}
-                      onClick={() => handleAction(req.id!, 'completed')}
-                      className="h-10 px-6 bg-emerald-500 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {processingId === req.id ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
-                      Mark Completed
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {req.adminNote && (
-                <div className="pt-4 border-t border-slate-50 flex items-start gap-2">
-                    <MessageSquare size={14} className="text-slate-300 mt-0.5" />
-                    <p className="text-[10px] font-medium text-slate-500 italic">"{req.adminNote}"</p>
-                </div>
+                        {req.walletAddressOrBinanceId}
+                      </div>
+                    </td>
+                    <td className="p-6">
+                      <span className="px-3 py-1 bg-slate-900 text-white rounded-lg text-[9px] font-black uppercase tracking-widest">
+                        {req.withdrawalMethod}
+                      </span>
+                    </td>
+                    <td className="p-6 text-right">
+                      {processingId === req.id ? (
+                        <Loader2 size={18} className="animate-spin text-slate-300 ml-auto" />
+                      ) : (
+                        <select 
+                          value={req.status}
+                          onChange={(e) => handleStatusChange(req.id!, req.status, e.target.value as WithdrawalStatus)}
+                          disabled={req.status === 'completed' || req.status === 'rejected'}
+                          className={`appearance-none px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all cursor-pointer outline-none ${
+                            req.status === 'completed' 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-100 cursor-default' 
+                              : 'bg-amber-50 text-amber-500 border-amber-100 hover:bg-amber-100'
+                          }`}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="completed">Done</option>
+                          {req.status === 'rejected' && <option value="rejected">Rejected</option>}
+                        </select>
+                      )}
+                    </td>
+                  </tr>
+                ))
               )}
-            </div>
-          ))
-        )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

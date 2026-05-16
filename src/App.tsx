@@ -6,7 +6,6 @@ import { AdminLayout } from './admin/AdminLayout';
 import { DashboardHome } from './admin/DashboardHome';
 import { UsersManagement } from './admin/UsersManagement';
 import { WithdrawalManagement } from './admin/WithdrawalManagement';
-import { ReferralAnalytics } from './admin/ReferralAnalytics';
 import { ActivityLogs } from './admin/ActivityLogs';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -69,14 +68,6 @@ export default function App() {
           element={
             <AdminRoute>
               <WithdrawalManagement />
-            </AdminRoute>
-          } 
-        />
-        <Route 
-          path="/admin/referrals" 
-          element={
-            <AdminRoute>
-              <ReferralAnalytics />
             </AdminRoute>
           } 
         />
