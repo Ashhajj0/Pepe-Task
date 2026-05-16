@@ -40,7 +40,7 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
   };
 
   const activeNodesCount = referrals.filter(ref => (ref.totalGenerated || 0) > 0).length;
-  const estimatedDailyIncome = (profile.totalReferrals || 0) * 250 * 0.1;
+  const estimatedDailyIncome = (profile.totalReferrals || 0) * 500 * 0.1;
 
   useEffect(() => {
     if (!profile.telegramId) return;
@@ -134,34 +134,49 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
         />
       </div>
 
-      <div className="space-y-6 pt-4">
-        <div className="flex items-center justify-between px-1">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Secure Peer Link</h3>
-          <ShieldCheck size={14} className="text-slate-200" />
+      <div className="space-y-4 pt-4">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={12} className="text-emerald-500" />
+            <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Node Authentication</h3>
+          </div>
+          <span className="text-[8px] font-bold text-slate-200 uppercase tracking-widest">v2.0.4</span>
         </div>
 
-        <div className="card rounded-[24px] p-6 border-white/10 bg-slate-50/50">
+        <div className="bg-white rounded-[28px] p-1.5 border border-slate-100 shadow-sm relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+          
           {profile.referralProcessed || profile.referredBy ? (
-            <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
-              <CheckCircle2 size={16} className="text-emerald-500" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-emerald-600 uppercase">Verified</span>
-                <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5 tracking-widest">Protocol Sync Complete</span>
+            <div className="flex items-center justify-between px-5 py-4 relative z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 border border-emerald-100/50">
+                  <CheckCircle2 size={18} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-black text-slate-900 uppercase">Protocol Sync Active</span>
+                  <span className="text-[8px] font-bold text-slate-400 uppercase mt-0.5 tracking-widest">Network Node {safeString(profile.referredBy).slice(0, 8)}...</span>
+                </div>
+              </div>
+              <div className="bg-emerald-50 px-3 py-1 rounded-full border border-emerald-100">
+                <span className="text-[8px] font-black text-emerald-600 uppercase">VERIFIED</span>
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-1.5 relative z-10">
               <div className="relative">
+                <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300">
+                  <UserPlus size={16} />
+                </div>
                 <input 
                   type="text"
-                  placeholder="ID"
+                  placeholder="INPUT CODE FOR 500 PEPE"
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value)}
                   disabled={redeemStatus.type === 'loading'}
-                  className="w-full bg-white border border-slate-100 rounded-xl px-4 py-3.5 text-[10px] font-black text-slate-900 focus:outline-none placeholder:text-slate-200"
+                  className="w-full bg-slate-50/50 rounded-[22px] pl-12 pr-4 py-5 text-[10px] font-black text-slate-900 focus:outline-none placeholder:text-slate-400 transition-all focus:bg-white border border-transparent focus:border-slate-100 uppercase tracking-widest"
                 />
                 {redeemStatus.type !== 'idle' && (
-                  <div className={`absolute right-4 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase ${redeemStatus.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
+                  <div className={`absolute right-5 top-1/2 -translate-y-1/2 text-[8px] font-black uppercase ${redeemStatus.type === 'error' ? 'text-red-500' : 'text-emerald-500'} bg-white px-2 py-1 rounded-md shadow-sm border border-slate-50`}>
                     {redeemStatus.message}
                   </div>
                 )}
@@ -169,9 +184,15 @@ export function ReferralPanel({ profile, onRedeemCode }: ReferralPanelProps) {
               <button 
                 onClick={handleRedeem}
                 disabled={!inputCode.trim() || redeemStatus.type === 'loading'}
-                className="w-full h-12 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-[0.98] transition-all shadow-md shadow-slate-100"
+                className="w-full h-14 bg-slate-900 text-white rounded-[22px] font-black text-[10px] uppercase tracking-widest active:scale-[0.97] transition-all flex items-center justify-center gap-3 shadow-lg shadow-slate-200 group/btn overflow-hidden relative disabled:opacity-50 disabled:grayscale"
               >
-                Redeem Code
+                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000"></div>
+                {redeemStatus.type === 'loading' ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Zap size={14} className="text-emerald-400 group-hover/btn:scale-110 transition-transform" />
+                )}
+                <span>Initialize Referral Sync</span>
               </button>
             </div>
           )}
@@ -232,32 +253,32 @@ function StatCard({ label, value, subValue, icon, highlight }: { label: string, 
 const userCache: Record<string, string> = {};
 
 function ActivityRow({ record }: { record: ReferralRecord, key?: string }) {
-  const [referredUser, setReferredUser] = useState<string>(() => userCache[record.referredId] || 'PEPE_OPER');
+  const [referredUser, setReferredUser] = useState<string>(() => userCache[record.referredId] || 'PEPE_NODE');
   useEffect(() => {
     if (userCache[record.referredId]) return;
     getDoc(doc(db, 'users', record.referredId)).then(snap => {
       if (snap.exists()) {
         const data = snap.data() as UserProfile;
-        const name = data.username || data.first_name;
+        const name = (data.username || data.first_name || 'Anonymous').slice(0, 15);
         userCache[record.referredId] = name;
         setReferredUser(name);
       }
     });
   }, [record.referredId]);
   return (
-    <div className="flex items-center justify-between p-4 px-5 bg-white rounded-2xl border border-slate-100 shadow-sm">
+    <div className="flex items-center justify-between p-4 px-5 bg-white rounded-2xl border border-slate-100 shadow-sm transition-all hover:border-emerald-100 group">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
-          <CheckCircle2 size={12} className="text-emerald-500" />
+        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+          <Activity size={12} className="text-emerald-500" />
         </div>
         <div className="flex flex-col">
-          <span className="text-[10px] font-bold text-slate-900">@{safeString(referredUser)}</span>
-          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">LINKED</span>
+          <span className="text-[10px] font-black text-slate-900">@{safeString(referredUser)}</span>
+          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest">MINING ACTIVITY</span>
         </div>
       </div>
       <div className="flex flex-col items-end">
-        <span className="text-[10px] font-black text-emerald-600">+{safeNumber(record.totalCommissionPaid).toFixed(2)}</span>
-        <span className="text-[7px] font-bold text-slate-400 uppercase italic">Credits</span>
+        <span className="text-[10px] font-black text-emerald-600">+{safeNumber(record.totalCommissionPaid).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
+        <span className="text-[7px] font-bold text-emerald-500/60 uppercase italic tracking-tighter">COMMISSION</span>
       </div>
     </div>
   );

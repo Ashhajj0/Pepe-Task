@@ -125,12 +125,20 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       if (isValidReferrer) {
         const commission = Math.floor(reward * 0.1);
         const referrerRef = doc(db, 'users', referredBy);
+        const referralId = `${referredBy}_${userId}`;
+        const referralRef = doc(db, 'referrals', referralId);
         
         if (commission > 0) {
           transaction.update(referrerRef, {
             balance: increment(commission),
             referralEarnings: increment(commission),
             totalEarned: increment(commission)
+          });
+
+          // Update the referral tracking document to show in activity list
+          transaction.update(referralRef, {
+            totalGenerated: increment(reward),
+            totalCommissionPaid: increment(commission)
           });
         }
       }

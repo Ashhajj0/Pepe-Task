@@ -675,15 +675,15 @@ export default function UserApp() {
       const userRef = doc(db, 'users', user.id.toString());
       await updateDoc(userRef, {
         referredBy: cleanCode,
-        balance: increment(250),
-        totalEarned: increment(250)
+        balance: increment(500),
+        totalEarned: increment(500)
       });
       
       // Process the referral logic (creates record, updates referrer stats)
       await processReferralWithRetry(user.id.toString(), cleanCode);
       
       logger.log('Sync', 'Code redemption successful', { cleanCode });
-      return { success: true, message: '250 PEPE credited!' };
+      return { success: true, message: '500 PEPE credited!' };
     } catch (err) {
       logger.error('Sync', 'Redemption failed', err);
       return { success: false, message: 'Protocol error.' };
@@ -945,7 +945,7 @@ export default function UserApp() {
 
         {/* Global Bottom Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-[100] px-6 pb-8 pointer-events-none sm:absolute">
-          <div className="glass rounded-[32px] p-2 grid grid-cols-5 shadow-[0_15px_40px_rgba(0,0,0,0.1)] border-white/70 pointer-events-auto">
+          <div className="bg-white rounded-[32px] p-2 grid grid-cols-5 shadow-[0_20px_50px_rgba(0,0,0,0.1)] border border-slate-100 pointer-events-auto">
             <NavItem icon={<LayoutDashboard size={20} />} active={activeTab === 'home'} label="Dash" onClick={() => setActiveTab('home')} />
             <NavItem icon={<Zap size={20} />} active={activeTab === 'earn'} label="Earn" onClick={() => setActiveTab('earn')} />
             <NavItem icon={<Wallet size={20} />} active={activeTab === 'wallet'} label="Asset" onClick={() => setActiveTab('wallet')} />
