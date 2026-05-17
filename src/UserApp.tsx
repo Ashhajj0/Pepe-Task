@@ -386,12 +386,44 @@ export default function UserApp() {
   }, [adState, cooldownRemaining]);
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      const now = new Date();
+      const todayStr = now.toDateString();
+      const lastChecked = localStorage.getItem('pepe_last_day_check');
+      
+      if (lastChecked && lastChecked !== todayStr) {
+        logger.log('Sync', 'New day detected, resetting local limits');
+        setIsLimitReached(false);
+        setResetCountdown(null);
+        setProfile(prev => {
+          if (!prev) return prev;
+          if (prev.adsWatchedToday === 0) return prev;
+          return { ...prev, adsWatchedToday: 0 };
+        });
+      }
+      localStorage.setItem('pepe_last_day_check', todayStr);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     let interval: any;
     if (isLimitReached) {
-      setResetCountdown(adService.getTimeUntilNextReset());
-      interval = setInterval(() => {
-        setResetCountdown(adService.getTimeUntilNextReset());
-      }, 1000);
+      const update = () => {
+        const countdown = adService.getTimeUntilNextReset();
+        setResetCountdown(countdown);
+        
+        // If countdown somehow loops or represents a fresh day, reset
+        if (countdown.hours === "23" && parseInt(countdown.minutes) > 58) {
+          setIsLimitReached(false);
+          setResetCountdown(null);
+        }
+      };
+      
+      update();
+      interval = setInterval(update, 1000);
+    } else {
+      setResetCountdown(null);
     }
     return () => clearInterval(interval);
   }, [isLimitReached]);
@@ -647,10 +679,15 @@ export default function UserApp() {
           const canBeReferred = !currentReferredBy && !data.referralProcessed && isValidReferralId(referralId) && referralId !== userId;
 
           // 2. Determine if metadata update is needed
+          const todayStrSync = new Date().toDateString();
+          const lastResetDateSync = safeDate(data.lastDailyReset).toDateString();
+          const isNewDayMetadata = todayStrSync !== lastResetDateSync;
+
           let metadataNeedsUpdate = false;
           if (timeSinceLastLogin > 300000) metadataNeedsUpdate = true;
           if (!data.referralCode) metadataNeedsUpdate = true;
           if (canBeReferred) metadataNeedsUpdate = true;
+          if (isNewDayMetadata) metadataNeedsUpdate = true;
           
           // Additional checks for structural missing fields (from previous versions)
           if (data.totalAdRewards === undefined) metadataNeedsUpdate = true;
@@ -684,10 +721,14 @@ export default function UserApp() {
               currentReferredBy = referralId;
             }
 
+            const lastResetDate = safeDate(data.lastDailyReset).toDateString();
+            const todayStr = new Date().toDateString();
+            const isNewDaySync = lastResetDate !== todayStr;
+
             if (data.totalAdRewards === undefined) updates.totalAdRewards = 0;
             if (data.adCooldownUntil === undefined) updates.adCooldownUntil = null;
-            if (data.lastDailyReset === undefined) updates.lastDailyReset = serverTimestamp();
-            if (data.adsWatchedToday === undefined) updates.adsWatchedToday = 0;
+            if (data.lastDailyReset === undefined || isNewDaySync) updates.lastDailyReset = serverTimestamp();
+            if (data.adsWatchedToday === undefined || isNewDaySync) updates.adsWatchedToday = 0;
             if (data.tasksCompleted === undefined) updates.tasksCompleted = 0;
             if (data.createdAt === undefined) updates.createdAt = serverTimestamp();
 
