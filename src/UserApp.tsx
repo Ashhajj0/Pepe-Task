@@ -502,6 +502,8 @@ export default function UserApp() {
             if (data.totalAdRewards === undefined) { updates.totalAdRewards = 0; needsUpdate = true; }
             if (data.adCooldownUntil === undefined) { updates.adCooldownUntil = null; needsUpdate = true; }
             if (data.lastDailyReset === undefined) { updates.lastDailyReset = serverTimestamp(); needsUpdate = true; }
+            if (data.adsWatchedToday === undefined) { updates.adsWatchedToday = 0; needsUpdate = true; }
+            if (data.tasksCompleted === undefined) { updates.tasksCompleted = 0; needsUpdate = true; }
             if (!data.taskHistory) { updates.taskHistory = []; needsUpdate = true; }
 
             if (Object.keys(updates).length > 0 && needsUpdate) {
@@ -767,7 +769,7 @@ export default function UserApp() {
         </header>
 
         {/* content */}
-        <main className="flex-1 overflow-y-auto no-scrollbar pb-36 pt-4 touch-pan-y overscroll-contain relative scroll-smooth bg-slate-50/[0.15]">
+        <main className="flex-1 overflow-y-auto pb-36 pt-4 touch-pan-y overscroll-contain relative scroll-smooth bg-slate-50/[0.15]">
           {/* Subtle Ambient light for content area */}
           <div className="fixed inset-x-0 top-32 h-[500px] bg-emerald-500/[0.03] blur-[150px] rounded-full -z-10 pointer-events-none"></div>
           

@@ -89,18 +89,27 @@ export const UsersManagement: React.FC = () => {
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Balance (PEPE)</label>
                 <input 
                   type="number"
-                  value={editingUser.balance}
+                  value={editingUser.balance || 0}
                   onChange={(e) => setEditingUser({ ...editingUser, balance: parseFloat(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Total Earned (All-time)</label>
+                <input 
+                  type="number"
+                  value={editingUser.totalEarned || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, totalEarned: parseFloat(e.target.value) || 0 })}
                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Total Referrals</label>
                 <input 
-                  type="number"
-                  value={editingUser.totalReferrals || 0}
-                  onChange={(e) => setEditingUser({ ...editingUser, totalReferrals: parseInt(e.target.value) || 0 })}
-                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                   type="number"
+                   value={editingUser.totalReferrals || 0}
+                   onChange={(e) => setEditingUser({ ...editingUser, totalReferrals: parseInt(e.target.value) || 0 })}
+                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
                 />
               </div>
               <div className="space-y-2">
@@ -113,11 +122,39 @@ export const UsersManagement: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Daily Ad Count (0-15)</label>
+                <input 
+                  type="number"
+                  value={editingUser.adsWatchedToday || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, adsWatchedToday: parseInt(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                  max="15"
+                />
+              </div>
+              <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">User Level</label>
                 <input 
                   type="number"
                   value={editingUser.level || 1}
                   onChange={(e) => setEditingUser({ ...editingUser, level: parseInt(e.target.value) || 1 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">User XP</label>
+                <input 
+                  type="number"
+                  value={editingUser.xp || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, xp: parseInt(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Trust Score</label>
+                <input 
+                  type="number"
+                  value={editingUser.trustScore || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, trustScore: parseInt(e.target.value) || 0 })}
                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
                 />
               </div>
@@ -266,7 +303,11 @@ export const UsersManagement: React.FC = () => {
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
+                  <tr 
+                    key={user.id} 
+                    onClick={() => handleEditUser(user)}
+                    className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group cursor-pointer"
+                  >
                     <td className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100 shadow-sm">

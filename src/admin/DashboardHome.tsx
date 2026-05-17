@@ -56,10 +56,11 @@ export const DashboardHome: React.FC = () => {
                 e.stopPropagation();
                 handleEditStat(title, value);
               }}
-              className="p-2 bg-slate-50 text-slate-400 rounded-lg hover:bg-black hover:text-white transition-all shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 text-slate-500 rounded-lg hover:bg-black hover:text-white transition-all shadow-sm group/btn"
               title={`Edit ${title}`}
             >
-              <Edit2 size={14} />
+              <Edit2 size={12} className="group-hover/btn:scale-110 transition-transform" />
+              <span className="text-[9px] font-black uppercase tracking-widest">Adjust</span>
             </button>
           )}
         </div>

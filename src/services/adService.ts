@@ -61,12 +61,13 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       
       // Daily Reset Logic check inside transaction
       const now = new Date();
-      const lastReset = safeDate(userData.lastDailyReset);
-      const isNewDay = now.toDateString() !== lastReset.toDateString();
+      const todayStr = now.toDateString(); 
+      const lastResetStr = safeDate(userData.lastDailyReset).toDateString();
+      const isNewDay = todayStr !== lastResetStr;
       
       const adsToday = isNewDay ? 1 : (userData.adsWatchedToday || 0) + 1;
       
-      if (!isNewDay && adsToday > AD_CONFIG.DAILY_LIMIT) {
+      if (adsToday > AD_CONFIG.DAILY_LIMIT) {
         throw new Error('Daily limit reached');
       }
 
@@ -105,11 +106,11 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         balance: increment(reward),
         totalEarned: increment(reward),
         totalAdRewards: increment(reward),
-        adsWatchedToday: adsToday,
+        adsWatchedToday: isNewDay ? 1 : increment(1),
         tasksCompleted: increment(1),
         lastAdWatchTime: serverTimestamp(),
         adCooldownUntil: Timestamp.fromDate(nextCooldown),
-        lastDailyReset: isNewDay ? serverTimestamp() : userData.lastDailyReset,
+        lastDailyReset: isNewDay ? serverTimestamp() : (userData.lastDailyReset || serverTimestamp()),
         level: newLevel,
         xp: newXp,
         levelProgress: levelProgress,
