@@ -409,10 +409,27 @@ export default function UserApp() {
     setLastReward(reward);
     setAdState('reward');
 
+    // Optimistic UI update for immediate feedback
+    setProfile(prev => {
+      if (!prev) return prev;
+      const now = new Date();
+      const lastReset = safeDate(prev.lastDailyReset);
+      const isNewDay = now.toDateString() !== lastReset.toDateString();
+
+      return {
+        ...prev,
+        balance: (prev.balance || 0) + reward,
+        adsWatchedToday: isNewDay ? 1 : (prev.adsWatchedToday || 0) + 1,
+        totalEarned: (prev.totalEarned || 0) + reward,
+        lastDailyReset: isNewDay ? now : prev.lastDailyReset
+      };
+    });
+
     try {
-      // Background write, not blocking the UI reward state
+      // background update
       adService.claimAdReward(user.id.toString(), reward, profile!).catch(err => {
         logger.error('Ads', 'Reward claim failed', err);
+        // Snapshot listener will eventually sync the true server state
       });
     } catch (err) {
       logger.error('Ads', 'Fatal error during ad completion', err);

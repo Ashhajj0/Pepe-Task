@@ -65,9 +65,9 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       const lastResetStr = safeDate(userData.lastDailyReset).toDateString();
       const isNewDay = todayStr !== lastResetStr;
       
-      const adsToday = isNewDay ? 1 : (userData.adsWatchedToday || 0) + 1;
+      const nextAdsCount = isNewDay ? 1 : (userData.adsWatchedToday || 0) + 1;
       
-      if (adsToday > AD_CONFIG.DAILY_LIMIT) {
+      if (nextAdsCount > AD_CONFIG.DAILY_LIMIT) {
         throw new Error('Daily limit reached');
       }
 
@@ -102,22 +102,25 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
 
       const nextCooldown = new Date(now.getTime() + AD_CONFIG.COOLDOWN_SECONDS * 1000);
 
-      const updateData = sanitizeFirestoreData({
+      const updateData: any = {
         balance: increment(reward),
         totalEarned: increment(reward),
         totalAdRewards: increment(reward),
-        adsWatchedToday: isNewDay ? 1 : increment(1),
+        adsWatchedToday: nextAdsCount,
         tasksCompleted: increment(1),
         lastAdWatchTime: serverTimestamp(),
         adCooldownUntil: Timestamp.fromDate(nextCooldown),
-        lastDailyReset: isNewDay ? serverTimestamp() : (userData.lastDailyReset || serverTimestamp()),
         level: newLevel,
         xp: newXp,
         levelProgress: levelProgress,
         taskHistory: history
-      });
+      };
 
-      transaction.update(userRef, updateData);
+      if (isNewDay || !userData.lastDailyReset) {
+        updateData.lastDailyReset = serverTimestamp();
+      }
+
+      transaction.update(userRef, sanitizeFirestoreData(updateData));
 
       // Handle referral commission (10%)
       const referredBy = userData.referredBy;
