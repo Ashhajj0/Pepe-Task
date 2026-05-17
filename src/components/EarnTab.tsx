@@ -51,7 +51,7 @@ export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaini
                 : 'bg-slate-900 text-white shadow-lg shadow-slate-200 active:scale-[0.98]'
             }`}
           >
-            {isLimitReached ? 'Daily Limit Reached' : adState === 'cooldown' ? `Syncing (${cooldownRemaining}s)` : 'Watch to Earn'}
+            {isLimitReached ? 'Daily Limit Reached' : adState === 'cooldown' ? `Next In (${cooldownRemaining}s)` : 'Watch to Earn'}
           </button>
         </div>
 

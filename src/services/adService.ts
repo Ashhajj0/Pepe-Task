@@ -106,7 +106,7 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         balance: increment(reward),
         totalEarned: increment(reward),
         totalAdRewards: increment(reward),
-        adsWatchedToday: nextAdsCount,
+        adsWatchedToday: isNewDay ? 1 : increment(1),
         tasksCompleted: increment(1),
         lastAdWatchTime: serverTimestamp(),
         adCooldownUntil: Timestamp.fromDate(nextCooldown),

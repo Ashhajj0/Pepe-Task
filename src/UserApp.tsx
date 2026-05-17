@@ -259,6 +259,8 @@ export default function UserApp() {
     initApp();
   }, []);
 
+  const lastOptimisticUpdateRef = useRef<number>(0);
+
   const startSync = (tgUser: TelegramUser) => {
     logger.log('Sync', 'Establishing Real-time listener...');
     const userRef = doc(db, 'users', tgUser.id.toString());
@@ -269,21 +271,35 @@ export default function UserApp() {
         
         // Update state and cache - Optimized equality check
         setProfile((prev) => {
+          if (!prev) return data;
+
+          // Optimization: check if we should strictly follow the server or trust our optimistic state
+          const isRecentUpdate = Date.now() - lastOptimisticUpdateRef.current < 8000;
+          
+          let adsWatchedToday = data.adsWatchedToday;
+          let balance = data.balance;
+
+          if (isRecentUpdate) {
+            // Keep the higher value if we just updated locally to prevent flickering/reverting
+            adsWatchedToday = Math.max(data.adsWatchedToday || 0, prev.adsWatchedToday || 0);
+            balance = Math.max(data.balance || 0, prev.balance || 0);
+          }
+
           if (
-            prev && 
-            prev.balance === data.balance && 
+            prev.balance === balance && 
             prev.referCount === data.referCount && 
             prev.totalReferrals === data.totalReferrals &&
             prev.level === data.level &&
             prev.preferredCurrency === data.preferredCurrency &&
             prev.xp === data.xp &&
-            prev.adsWatchedToday === data.adsWatchedToday &&
+            prev.adsWatchedToday === adsWatchedToday &&
             prev.pendingWithdrawalBalance === data.pendingWithdrawalBalance &&
             prev.lastWithdrawalAt === data.lastWithdrawalAt
           ) {
             return prev;
           }
-          return data;
+          
+          return { ...data, adsWatchedToday, balance };
         });
         localStorage.setItem('pepe_profile_cache', JSON.stringify(data));
         setLoading(false);
@@ -408,6 +424,7 @@ export default function UserApp() {
     const reward = adService.getSimulatedReward();
     setLastReward(reward);
     setAdState('reward');
+    lastOptimisticUpdateRef.current = Date.now();
 
     // Optimistic UI update for immediate feedback
     setProfile(prev => {
@@ -861,7 +878,7 @@ export default function UserApp() {
 
               <div className="space-y-4 mb-20">
                 <h3 className="text-2xl font-black tracking-[0.25em] text-slate-900 uppercase italic font-display">
-                  {adState === 'loading' ? 'Syncing...' : 'Mined Link'}
+                  {adState === 'loading' ? 'Loading...' : 'Mined Link'}
                 </h3>
                 <div className="flex items-center justify-center gap-3">
                   <Timer size={16} className="text-emerald-500" />
