@@ -541,15 +541,33 @@ export default function UserApp() {
   };
 
   const handleHandleSocialTask = (taskId: string, url: string, reward: number) => {
-    if ((profile as any)?.completedTasks?.includes(taskId)) return;
-    
-    // Immediately open the link
-    if (window.Telegram?.WebApp?.openTelegramLink) {
-      window.Telegram.WebApp.openTelegramLink(url);
-    } else {
-      window.open(url, '_blank');
+    logger.log('Social', `Starting task ${taskId}`, { url });
+    if ((profile as any)?.completedTasks?.includes(taskId)) {
+      logger.log('Social', 'Task already completed');
+      return;
     }
-    hasOpenedLinkRef.current[taskId] = true;
+    
+    // Immediately open the link to satisfy browser requirements for user-initiated actions
+    try {
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        logger.log('Social', 'Opening via Telegram openTelegramLink');
+        window.Telegram.WebApp.openTelegramLink(url);
+      } else if (window.Telegram?.WebApp?.openLink) {
+        logger.log('Social', 'Opening via Telegram openLink');
+        window.Telegram.WebApp.openLink(url);
+      } else {
+        logger.log('Social', 'Opening via window.open');
+        const win = window.open(url, '_blank', 'noopener,noreferrer');
+        if (!win) {
+          logger.log('Social', 'window.open failed, trying location.href');
+          // Fallback if window.open is blocked, though not ideal
+          // window.location.href = url; 
+        }
+      }
+      hasOpenedLinkRef.current[taskId] = true;
+    } catch (e) {
+      logger.error('Social', 'Link opening error', e);
+    }
 
     // Show verification modal starting at "verifying" status
     setSocialTaskVerify({ show: true, taskId, url, reward, status: 'verifying' });

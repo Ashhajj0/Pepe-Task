@@ -52,9 +52,20 @@ export const TimerDisplay = memo(({ label, value }: { label: string, value: stri
 
 TimerDisplay.displayName = 'TimerDisplay';
 
-export const SocialTask = memo(({ icon, title, reward, actionLabel }: { icon: ReactNode, title: string, reward: string, actionLabel: string }) => {
+export const SocialTask = memo(({ icon, title, reward, actionLabel, onClick, disabled }: { icon: ReactNode, title: string, reward: string, actionLabel: string, onClick?: () => void, disabled?: boolean }) => {
+  const handleClick = (e: any) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    console.log('[SocialTask] Clicked:', { title, disabled, hasOnClick: !!onClick });
+    if (!disabled && onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <div className="card h-16 rounded-[24px] flex items-center justify-between pl-5 pr-4 hover:bg-slate-50/50 transition-all group active:scale-[0.98] border-white/10">
+    <div 
+      onClick={handleClick}
+      className={`card h-16 rounded-[24px] flex items-center justify-between pl-5 pr-4 transition-all group border-white/10 ${disabled ? 'opacity-50 grayscale pointer-events-none shadow-none' : 'hover:bg-slate-50/50 active:scale-[0.98] cursor-pointer shadow-sm'}`}
+    >
       <div className="flex items-center gap-4">
         <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-100 group-hover:bg-white transition-colors">
           {icon}
@@ -66,7 +77,11 @@ export const SocialTask = memo(({ icon, title, reward, actionLabel }: { icon: Re
           </div>
         </div>
       </div>
-      <button className="h-9 px-5 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-slate-100">
+      <button 
+        disabled={disabled}
+        onClick={handleClick}
+        className="h-9 px-5 bg-slate-900 text-white rounded-lg font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-md shadow-slate-100 disabled:bg-slate-100 disabled:text-slate-400 disabled:shadow-none"
+      >
         {actionLabel}
       </button>
     </div>
