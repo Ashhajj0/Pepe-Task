@@ -85,16 +85,12 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       const xpGain = 4;
       let newXp = (userData.xp || 0) + xpGain;
       let newLevel = userData.level || 1;
-      let totalBonus = 0;
       
       const xpForNextLevel = 100;
       if (newXp >= xpForNextLevel) {
         const levelsGained = Math.floor(newXp / xpForNextLevel);
         newLevel += levelsGained;
         newXp = newXp % xpForNextLevel;
-        
-        // Level up reward: 500 PEPE per level
-        totalBonus = levelsGained * 500;
       }
       
       const levelProgress = Math.floor((newXp / xpForNextLevel) * 100);
@@ -113,10 +109,6 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         xp: newXp,
         levelProgress: levelProgress
       };
-
-      if (totalBonus > 0) {
-        updateData.lastClaimedLevel = newLevel;
-      }
 
       if (isNewDay || !userData.lastDailyReset) {
         // Use local now for immediate consistency in next transaction read
@@ -151,7 +143,7 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         }
       }
 
-      return { reward, totalBonus, newLevel, leveledUp: newLevel > userData.level };
+      return { reward, newLevel, leveledUp: newLevel > userData.level };
     });
 
     console.log(`[adService] Transaction success for user ${userId}. Reward: ${reward}`);

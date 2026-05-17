@@ -542,48 +542,57 @@ export default function UserApp() {
 
   const handleHandleSocialTask = (taskId: string, url: string, reward: number) => {
     if ((profile as any)?.completedTasks?.includes(taskId)) return;
-    setSocialTaskVerify({ show: true, taskId, url, reward, status: 'idle' });
+    
+    // Immediately open the link
+    if (window.Telegram?.WebApp?.openTelegramLink) {
+      window.Telegram.WebApp.openTelegramLink(url);
+    } else {
+      window.open(url, '_blank');
+    }
+    hasOpenedLinkRef.current[taskId] = true;
+
+    // Show verification modal starting at "verifying" status
+    setSocialTaskVerify({ show: true, taskId, url, reward, status: 'verifying' });
+
+    // Auto-start verification process after transition
+    setTimeout(() => {
+      verifySocialTask(taskId, reward);
+    }, 4000);
+  };
+
+  const verifySocialTask = async (taskId: string, reward: number) => {
+    try {
+      const result = await adService.claimSocialTask(user!.id.toString(), taskId, reward);
+      if (result.success) {
+        setSocialTaskVerify(prev => ({ ...prev, status: 'success' }));
+        setRewardToast({ show: true, amount: reward });
+        setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
+        setTimeout(() => setSocialTaskVerify(prev => ({ ...prev, show: false })), 2000);
+      }
+    } catch (e) {
+      setSocialTaskVerify(prev => ({ ...prev, status: 'failed' }));
+    }
   };
 
   const startSocialTaskVerification = async () => {
-    if (socialTaskVerify.status !== 'idle') return;
+    // This is now used as a "Try Again" trigger from modal
+    if (socialTaskVerify.status === 'success') return;
     
-    // Step 1: Open link
-    setSocialTaskVerify(prev => ({ ...prev, status: 'opening' }));
+    setSocialTaskVerify(prev => ({ ...prev, status: 'verifying' }));
     
-    // We attempt to open the link via Telegram WebApp if available
-    setTimeout(() => {
+    // Attempt to open link again if they say they didn't join
+    if (!hasOpenedLinkRef.current[socialTaskVerify.taskId]) {
       if (window.Telegram?.WebApp?.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(socialTaskVerify.url);
       } else {
         window.open(socialTaskVerify.url, '_blank');
       }
       hasOpenedLinkRef.current[socialTaskVerify.taskId] = true;
-    }, 1000);
+    }
 
-    // Give user time to join
     setTimeout(() => {
-      setSocialTaskVerify(prev => ({ ...prev, status: 'verifying' }));
-    }, 4000);
-
-    // Final verification step
-    setTimeout(async () => {
-      if (hasOpenedLinkRef.current[socialTaskVerify.taskId]) {
-        try {
-          const result = await adService.claimSocialTask(user!.id.toString(), socialTaskVerify.taskId, socialTaskVerify.reward);
-          if (result.success) {
-            setSocialTaskVerify(prev => ({ ...prev, status: 'success' }));
-            setRewardToast({ show: true, amount: socialTaskVerify.reward });
-            setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
-            setTimeout(() => setSocialTaskVerify(prev => ({ ...prev, show: false })), 2000);
-          }
-        } catch (e) {
-          setSocialTaskVerify(prev => ({ ...prev, status: 'failed' }));
-        }
-      } else {
-        setSocialTaskVerify(prev => ({ ...prev, status: 'failed' }));
-      }
-    }, 7000);
+      verifySocialTask(socialTaskVerify.taskId, socialTaskVerify.reward);
+    }, 5000);
   };
 
   const processReferralWithRetry = async (newUserId: string, referrerId: string, retries = 3) => {
@@ -695,7 +704,7 @@ export default function UserApp() {
             xp: 0,
             level: 1,
             levelProgress: 0,
-            lastClaimedLevel: 0,
+            lastClaimedLevel: 1,
             preferredCurrency: 'pepe',
             lastResetDate: new Date().toISOString().split('T')[0],
             trustScore: 100,
@@ -944,7 +953,6 @@ export default function UserApp() {
               cooldownRemaining={cooldownRemaining}
               handleWatchAd={handleWatchAd}
               resetCountdown={resetCountdown}
-              onClaimLevelBonus={handleClaimLevelBonus}
               onHandleSocialTask={handleHandleSocialTask}
             />
           )}
