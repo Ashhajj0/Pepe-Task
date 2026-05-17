@@ -95,7 +95,7 @@ export const AdminService = {
     });
   },
 
-  async processWithdrawal(withdrawalId: string, status: 'approved' | 'rejected' | 'completed', adminNote: string = '') {
+  async processWithdrawal(withdrawalId: string, status: 'approved' | 'rejected' | 'completed') {
     const withdrawalRef = doc(db, 'withdrawals', withdrawalId);
     
     try {
@@ -134,12 +134,11 @@ export const AdminService = {
 
         transaction.update(withdrawalRef, { 
           status, 
-          processedAt: serverTimestamp(),
-          adminNote
+          processedAt: serverTimestamp()
         });
       });
       
-      await this.logAction(`WITHDRAWAL_${status.toUpperCase()}`, undefined, { withdrawalId, adminNote });
+      await this.logAction(`WITHDRAWAL_${status.toUpperCase()}`, undefined, { withdrawalId });
     } catch (e) {
       console.error("Error processing withdrawal:", e);
       throw e;

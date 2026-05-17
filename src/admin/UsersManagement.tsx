@@ -113,6 +113,15 @@ export const UsersManagement: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Referral Earnings (PEPE)</label>
+                <input 
+                  type="number"
+                  value={editingUser.referralEarnings || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, referralEarnings: parseFloat(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Total Ads Watched</label>
                 <input 
                   type="number"
@@ -150,6 +159,15 @@ export const UsersManagement: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Pending Withdrawal Balance</label>
+                <input 
+                  type="number"
+                  value={editingUser.pendingWithdrawalBalance || 0}
+                  onChange={(e) => setEditingUser({ ...editingUser, pendingWithdrawalBalance: parseFloat(e.target.value) || 0 })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                />
+              </div>
+              <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Trust Score</label>
                 <input 
                   type="number"
@@ -157,6 +175,17 @@ export const UsersManagement: React.FC = () => {
                   onChange={(e) => setEditingUser({ ...editingUser, trustScore: parseInt(e.target.value) || 0 })}
                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
                 />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Current Status</label>
+                <select 
+                  value={editingUser.isBanned ? 'banned' : 'active'}
+                  onChange={(e) => setEditingUser({ ...editingUser, isBanned: e.target.value === 'banned' })}
+                  className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
+                >
+                  <option value="active">Active</option>
+                  <option value="banned">Banned</option>
+                </select>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Payment Address / Wallet ID</label>
@@ -182,6 +211,20 @@ export const UsersManagement: React.FC = () => {
                     <ExternalLink size={18} />
                   </button>
                 </div>
+              </div>
+
+              <div className="md:col-span-2 pt-4">
+                <button 
+                  onClick={() => {
+                    if (confirm(`CRITICAL: Are you sure you want to PERMANENTLY DELETE @${editingUser.username}? This data will be gone forever.`)) {
+                      AdminService.deleteUser(editingUser.id!);
+                      setEditingUser(null);
+                    }
+                  }}
+                  className="w-full h-12 bg-red-50 text-red-500 border border-red-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-sm"
+                >
+                  Permanently Delete User
+                </button>
               </div>
             </div>
 

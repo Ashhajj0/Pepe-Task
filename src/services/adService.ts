@@ -6,8 +6,8 @@ import { sanitizeFirestoreData, safeDate } from '../lib/utils/firestore';
 export const AD_CONFIG = {
   DAILY_LIMIT: 15,
   COOLDOWN_SECONDS: 10,
-  REWARD_MIN: 50,
-  REWARD_MAX: 150,
+  REWARD_MIN: 0,
+  REWARD_MAX: 100,
   AD_DURATION_MIN: 1,
   AD_DURATION_MAX: 2,
 };
@@ -82,14 +82,19 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       }
 
       // Calculate XP and level
-      const xpGain = 10;
+      const xpGain = 4;
       let newXp = (userData.xp || 0) + xpGain;
       let newLevel = userData.level || 1;
+      let totalBonus = 0;
       
       const xpForNextLevel = 100;
       if (newXp >= xpForNextLevel) {
-        newLevel += Math.floor(newXp / xpForNextLevel);
+        const levelsGained = Math.floor(newXp / xpForNextLevel);
+        newLevel += levelsGained;
         newXp = newXp % xpForNextLevel;
+        
+        // Level up reward: 500 PEPE per level
+        totalBonus = levelsGained * 500;
       }
       
       const levelProgress = Math.floor((newXp / xpForNextLevel) * 100);
@@ -108,6 +113,10 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         xp: newXp,
         levelProgress: levelProgress
       };
+
+      if (totalBonus > 0) {
+        updateData.lastClaimedLevel = newLevel;
+      }
 
       if (isNewDay || !userData.lastDailyReset) {
         // Use local now for immediate consistency in next transaction read
@@ -142,13 +151,44 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         }
       }
 
-      return { reward, leveledUp: newLevel > userData.level };
+      return { reward, totalBonus, newLevel, leveledUp: newLevel > userData.level };
     });
 
     console.log(`[adService] Transaction success for user ${userId}. Reward: ${reward}`);
     return { success: true, ...result };
   } catch (error) {
     console.error('[adService] Error claiming reward:', error);
+    throw error;
+  }
+};
+
+export const claimSocialTask = async (userId: string, taskId: string, rewardValue: number) => {
+  const userRef = doc(db, 'users', userId);
+  
+  try {
+    const result = await runTransaction(db, async (transaction) => {
+      const userSnap = await transaction.get(userRef);
+      if (!userSnap.exists()) throw new Error('User not found');
+      
+      const userData = userSnap.data() as any;
+      const completedTasks = userData.completedTasks || [];
+      
+      if (completedTasks.includes(taskId)) {
+        throw new Error('Task already completed');
+      }
+      
+      transaction.update(userRef, {
+        balance: increment(rewardValue),
+        totalEarned: increment(rewardValue),
+        completedTasks: [...completedTasks, taskId]
+      });
+      
+      return { success: true, reward: rewardValue };
+    });
+    
+    return result;
+  } catch (error) {
+    console.error('[adService] Error claiming social task reward:', error);
     throw error;
   }
 };

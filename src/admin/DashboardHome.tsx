@@ -41,8 +41,18 @@ export const DashboardHome: React.FC = () => {
     }
   };
 
+  const formatValue = (num: number) => {
+    if (num < 1000) return num.toLocaleString();
+    if (num < 1000000) {
+      const k = num / 1000;
+      return (Math.floor(k * 10) / 10).toString().replace(/\.0$/, '') + 'K';
+    }
+    const m = num / 1000000;
+    return (Math.floor(m * 10) / 10).toString().replace(/\.0$/, '') + 'M';
+  };
+
   const StatCard = ({ title, value, icon, color }: any) => {
-    const isEditable = title === "Total Withdrawn" || title === "Total Ads Watched";
+    const isEditable = title === "Total Withdrawals" || title === "Total Ads Watched";
     
     return (
       <div className="bg-white p-8 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-slate-100 transition-all group relative">
@@ -102,13 +112,13 @@ export const DashboardHome: React.FC = () => {
         />
         <StatCard 
           title="Pending Payouts" 
-          value={`${stats?.pendingWithdrawalsAmount.toLocaleString()} PEPE`} 
+          value={formatValue(stats?.pendingWithdrawalsAmount || 0)} 
           icon={<Clock size={24} />} 
           color="bg-amber-500"
         />
         <StatCard 
-          title="Total Withdrawn" 
-          value={`${stats?.totalWithdrawnAmount.toLocaleString()} PEPE`} 
+          title="Total Withdrawals" 
+          value={formatValue(stats?.totalWithdrawnAmount || 0)} 
           icon={<CreditCard size={24} />} 
           color="bg-emerald-600"
         />
@@ -118,37 +128,6 @@ export const DashboardHome: React.FC = () => {
           icon={<Activity size={24} />} 
           color="bg-slate-900"
         />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-[32px] border border-slate-100 p-10 shadow-sm flex flex-col justify-center">
-            <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Network Health</h3>
-            <p className="text-slate-400 mb-10 font-medium">System performance and load distribution logs.</p>
-            
-            <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Active Database Connections</span>
-                    <span className="text-sm font-black text-slate-900">100%</span>
-                </div>
-                <div className="h-2 bg-slate-50 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} className="h-full bg-emerald-500" />
-                </div>
-                
-                <div className="flex justify-between items-center pt-2">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Ad Propagation Delay</span>
-                    <span className="text-sm font-black text-slate-900">0.4ms</span>
-                </div>
-                <div className="h-2 bg-slate-50 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: '15%' }} className="h-full bg-blue-500" />
-                </div>
-
-                <div className="mt-8 p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 leading-relaxed italic">
-                    Note: Stats shown above represent all-time cumulative data aggregated from all nodes in the cloud protocol.
-                  </p>
-                </div>
-            </div>
-        </div>
       </div>
     </div>
   );

@@ -27,8 +27,7 @@ export const WithdrawalManagement: React.FC = () => {
 
     setProcessingId(id);
     try {
-      const note = newStatus === 'completed' ? 'Withdrawal processed' : 'Processed by admin';
-      await AdminService.processWithdrawal(id, newStatus, note);
+      await AdminService.processWithdrawal(id, newStatus);
     } catch (e) {
       alert('Failed to update status');
     } finally {
@@ -102,15 +101,17 @@ export const WithdrawalManagement: React.FC = () => {
                           value={req.status}
                           onChange={(e) => handleStatusChange(req.id!, req.status, e.target.value as WithdrawalStatus)}
                           disabled={req.status === 'completed' || req.status === 'rejected'}
-                          className={`appearance-none px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all cursor-pointer outline-none ${
+                          className={`appearance-none px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest border transition-all cursor-pointer outline-none shadow-sm ${
                             req.status === 'completed' 
                               ? 'bg-emerald-50 text-emerald-600 border-emerald-100 cursor-default' 
-                              : 'bg-amber-50 text-amber-500 border-amber-100 hover:bg-amber-100'
+                              : req.status === 'rejected'
+                                ? 'bg-red-50 text-red-500 border-red-100 cursor-default'
+                                : 'bg-amber-50 text-amber-500 border-amber-100 hover:bg-black hover:text-white hover:border-black'
                           }`}
                         >
-                          <option value="pending">Pending</option>
+                          <option value="pending" disabled>Pending</option>
                           <option value="completed">Done</option>
-                          {req.status === 'rejected' && <option value="rejected">Rejected</option>}
+                          <option value="rejected">Rejected</option>
                         </select>
                       )}
                     </td>

@@ -58,6 +58,9 @@ export default function UserApp() {
   const [adState, setAdState] = useState<'idle' | 'loading' | 'cooldown'>('idle');
   const [referralParam, setReferralParam] = useState<string | null>(null);
   const [rewardToast, setRewardToast] = useState<{ show: boolean, amount: number }>({ show: false, amount: 0 });
+  const [levelUpData, setLevelUpData] = useState<{ show: boolean, level: number, bonus: number }>({ show: false, level: 0, bonus: 0 });
+  const [socialTaskVerify, setSocialTaskVerify] = useState<{ show: boolean, taskId: string, url: string, reward: number, status: 'idle' | 'opening' | 'verifying' | 'failed' | 'success' }>({ show: false, taskId: '', url: '', reward: 0, status: 'idle' });
+  const hasOpenedLinkRef = useRef<Record<string, boolean>>({});
 
   const adStateRef = useRef(adState);
   useEffect(() => { adStateRef.current = adState; }, [adState]);
@@ -279,22 +282,48 @@ export default function UserApp() {
           let adsWatchedToday = data.adsWatchedToday;
           let balance = data.balance;
           let tasksCompleted = data.tasksCompleted;
+          let level: number;
+          let xp: number;
+          let levelProgress: number;
 
           if (isRecentUpdate) {
             // Keep the higher value if we just updated locally to prevent flickering/reverting
             adsWatchedToday = Math.max(data.adsWatchedToday || 0, prev.adsWatchedToday || 0);
             balance = Math.max(data.balance || 0, prev.balance || 0);
             tasksCompleted = Math.max(data.tasksCompleted || 0, prev.tasksCompleted || 0);
-            logger.log('Sync', 'Optimistic merge', { serverAds: data.adsWatchedToday, localAds: prev.adsWatchedToday });
+            
+            // Level and XP protection
+            // If local level is higher, trust local. If level same, trust higher XP.
+            const serverLevel = data.level || 1;
+            const localLevel = prev.level || 1;
+            if (localLevel > serverLevel) {
+              level = localLevel;
+              xp = prev.xp || 0;
+              levelProgress = prev.levelProgress || 0;
+            } else if (localLevel === serverLevel) {
+              level = serverLevel;
+              xp = Math.max(data.xp || 0, prev.xp || 0);
+              levelProgress = Math.max(data.levelProgress || 0, prev.levelProgress || 0);
+            } else {
+              level = serverLevel;
+              xp = data.xp || 0;
+              levelProgress = data.levelProgress || 0;
+            }
+
+            logger.log('Sync', 'Optimistic merge', { serverAds: data.adsWatchedToday, localAds: prev.adsWatchedToday, level, xp });
+          } else {
+            level = data.level;
+            xp = data.xp;
+            levelProgress = data.levelProgress;
           }
 
           if (
             prev.balance === balance && 
             prev.referCount === data.referCount && 
             prev.totalReferrals === data.totalReferrals &&
-            prev.level === data.level &&
+            prev.level === level &&
             prev.preferredCurrency === data.preferredCurrency &&
-            prev.xp === data.xp &&
+            prev.xp === xp &&
             prev.adsWatchedToday === adsWatchedToday &&
             prev.tasksCompleted === tasksCompleted &&
             prev.pendingWithdrawalBalance === data.pendingWithdrawalBalance &&
@@ -303,7 +332,7 @@ export default function UserApp() {
             return prev;
           }
           
-          return { ...data, adsWatchedToday, balance, tasksCompleted };
+          return { ...data, adsWatchedToday, balance, tasksCompleted, level, xp, levelProgress };
         });
         localStorage.setItem('pepe_profile_cache', JSON.stringify(data));
         setLoading(false);
@@ -433,12 +462,25 @@ export default function UserApp() {
 
     logger.log('Ads', 'Processing reward', { reward });
 
-    // Optimistic UI update
+    // Optimistic UI update for ad reward only
     setProfile(prev => {
       if (!prev) return prev;
       const now = new Date();
       const lastReset = safeDate(prev.lastDailyReset);
       const isNewDay = now.toDateString() !== lastReset.toDateString();
+
+      const xpGain = 4;
+      let newXp = (prev.xp || 0) + xpGain;
+      let newLevel = prev.level || 1;
+      
+      const xpForNextLevel = 100;
+      if (newXp >= xpForNextLevel) {
+        const levelsGained = Math.floor(newXp / xpForNextLevel);
+        newLevel += levelsGained;
+        newXp = newXp % xpForNextLevel;
+      }
+      
+      const levelProgress = Math.floor((newXp / xpForNextLevel) * 100);
 
       return {
         ...prev,
@@ -447,7 +489,10 @@ export default function UserApp() {
         tasksCompleted: (prev.tasksCompleted || 0) + 1,
         totalEarned: (prev.totalEarned || 0) + reward,
         lastDailyReset: isNewDay ? now : prev.lastDailyReset,
-        adCooldownUntil: new Date(now.getTime() + adService.AD_CONFIG.COOLDOWN_SECONDS * 1000)
+        adCooldownUntil: new Date(now.getTime() + adService.AD_CONFIG.COOLDOWN_SECONDS * 1000),
+        level: newLevel,
+        xp: newXp,
+        levelProgress: levelProgress
       };
     });
 
@@ -462,12 +507,83 @@ export default function UserApp() {
   };
 
   const handleClaimLevelBonus = async () => {
-    if (!user || !profile) return;
+    if (!user || !profile || isProcessingRewardRef.current) return;
+    
+    const unclaimedLevels = (profile.level || 1) - (profile.lastClaimedLevel || 1);
+    if (unclaimedLevels <= 0) return;
+
+    const bonusAmount = unclaimedLevels * 500;
+    isProcessingRewardRef.current = true;
+
+    // Optimistic update
+    setProfile(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        balance: (prev.balance || 0) + bonusAmount,
+        totalEarned: (prev.totalEarned || 0) + bonusAmount,
+        lastClaimedLevel: prev.level
+      };
+    });
+
+    // Show success toast
+    setRewardToast({ show: true, amount: bonusAmount });
+    setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
+
     try {
       await adService.claimLevelBonus(user.id.toString(), profile);
+      logger.log('Ads', 'Level bonus claimed successfully');
     } catch (err) {
-      console.error('Failed to claim level bonus:', err);
+      logger.error('Ads', 'Level bonus claim failed', err);
+    } finally {
+      isProcessingRewardRef.current = false;
     }
+  };
+
+  const handleHandleSocialTask = (taskId: string, url: string, reward: number) => {
+    if ((profile as any)?.completedTasks?.includes(taskId)) return;
+    setSocialTaskVerify({ show: true, taskId, url, reward, status: 'idle' });
+  };
+
+  const startSocialTaskVerification = async () => {
+    if (socialTaskVerify.status !== 'idle') return;
+    
+    // Step 1: Open link
+    setSocialTaskVerify(prev => ({ ...prev, status: 'opening' }));
+    
+    // We attempt to open the link via Telegram WebApp if available
+    setTimeout(() => {
+      if (window.Telegram?.WebApp?.openTelegramLink) {
+        window.Telegram.WebApp.openTelegramLink(socialTaskVerify.url);
+      } else {
+        window.open(socialTaskVerify.url, '_blank');
+      }
+      hasOpenedLinkRef.current[socialTaskVerify.taskId] = true;
+    }, 1000);
+
+    // Give user time to join
+    setTimeout(() => {
+      setSocialTaskVerify(prev => ({ ...prev, status: 'verifying' }));
+    }, 4000);
+
+    // Final verification step
+    setTimeout(async () => {
+      if (hasOpenedLinkRef.current[socialTaskVerify.taskId]) {
+        try {
+          const result = await adService.claimSocialTask(user!.id.toString(), socialTaskVerify.taskId, socialTaskVerify.reward);
+          if (result.success) {
+            setSocialTaskVerify(prev => ({ ...prev, status: 'success' }));
+            setRewardToast({ show: true, amount: socialTaskVerify.reward });
+            setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
+            setTimeout(() => setSocialTaskVerify(prev => ({ ...prev, show: false })), 2000);
+          }
+        } catch (e) {
+          setSocialTaskVerify(prev => ({ ...prev, status: 'failed' }));
+        }
+      } else {
+        setSocialTaskVerify(prev => ({ ...prev, status: 'failed' }));
+      }
+    }, 7000);
   };
 
   const processReferralWithRetry = async (newUserId: string, referrerId: string, retries = 3) => {
@@ -828,6 +944,8 @@ export default function UserApp() {
               cooldownRemaining={cooldownRemaining}
               handleWatchAd={handleWatchAd}
               resetCountdown={resetCountdown}
+              onClaimLevelBonus={handleClaimLevelBonus}
+              onHandleSocialTask={handleHandleSocialTask}
             />
           )}
 
@@ -867,6 +985,95 @@ export default function UserApp() {
             }
           }}
         />
+
+        {/* Social Task Verification Modal */}
+        <AnimatePresence>
+          {socialTaskVerify.show && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[250] bg-white/60 backdrop-blur-3xl flex items-center justify-center p-8 active:scale-[1.01] transition-transform"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 40, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.9, y: 40, opacity: 0 }}
+                className="w-full max-w-[320px] bg-white rounded-[40px] border border-slate-100 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] p-10 flex flex-col items-center text-center relative overflow-hidden group"
+              >
+                <button 
+                  onClick={() => setSocialTaskVerify({ ...socialTaskVerify, show: false })}
+                  className="absolute top-6 right-6 w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+
+                <div className="relative mb-8 mt-4">
+                  <div className="w-20 h-20 rounded-[28px] bg-slate-900 flex items-center justify-center relative z-10 shadow-xl">
+                    <Users size={32} className="text-white" />
+                  </div>
+                  {socialTaskVerify.status === 'success' && (
+                    <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-4 border-white z-20">
+                      <CheckCircle2 size={16} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 mb-10">
+                  <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight italic">Verify Mission</h3>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] leading-relaxed">
+                    Extraction Protocol Requires <br /> Channel Synchronization
+                  </p>
+                </div>
+
+                <div className="w-full bg-slate-50 rounded-[24px] border border-slate-100 p-6 mb-8">
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${socialTaskVerify.status !== 'idle' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200'}`}>
+                        {socialTaskVerify.status !== 'idle' ? <CheckCircle2 size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${socialTaskVerify.status !== 'idle' ? 'text-slate-900' : 'text-slate-400'}`}>Join Channel</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200'}`}>
+                        {['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? <CheckCircle2 size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? 'text-slate-900' : 'text-slate-400'}`}>Verify Protocol</span>
+                    </div>
+                  </div>
+                </div>
+
+                {socialTaskVerify.status === 'idle' ? (
+                  <button 
+                    onClick={startSocialTaskVerification}
+                    className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-slate-200"
+                  >
+                    Start Verification
+                  </button>
+                ) : socialTaskVerify.status === 'success' ? (
+                   <div className="text-emerald-600 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                      Synchronization Complete
+                   </div>
+                ) : socialTaskVerify.status === 'failed' ? (
+                  <div className="space-y-4 w-full">
+                    <div className="text-rose-500 text-[9px] font-black uppercase tracking-[0.2em]">Verification Failed. Please join first.</div>
+                    <button 
+                      onClick={() => setSocialTaskVerify({ ...socialTaskVerify, status: 'idle' })}
+                      className="w-full h-14 bg-slate-900 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest active:scale-95 transition-all"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 size={24} className="text-slate-900 animate-spin" />
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Processing Node...</span>
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Reward Success Toast */}
         <AnimatePresence>
