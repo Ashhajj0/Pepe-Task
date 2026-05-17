@@ -55,17 +55,15 @@ export default function UserApp() {
 
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('home');
-  const [adState, setAdState] = useState<'idle' | 'loading' | 'watching' | 'cooldown' | 'reward'>('idle');
+  const [adState, setAdState] = useState<'idle' | 'loading' | 'cooldown'>('idle');
   const [referralParam, setReferralParam] = useState<string | null>(null);
+  const [rewardToast, setRewardToast] = useState<{ show: boolean, amount: number }>({ show: false, amount: 0 });
 
   const adStateRef = useRef(adState);
   useEffect(() => { adStateRef.current = adState; }, [adState]);
 
   const initialSyncRef = useRef(true);
-  const [adProgress, setAdProgress] = useState(0);
-  const [adTimer, setAdTimer] = useState(0);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
-  const [lastReward, setLastReward] = useState(0);
   const [isLimitReached, setIsLimitReached] = useState(false);
   const [resetCountdown, setResetCountdown] = useState<{ hours: string, minutes: string, seconds: string } | null>(null);
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
@@ -260,6 +258,7 @@ export default function UserApp() {
   }, []);
 
   const lastOptimisticUpdateRef = useRef<number>(0);
+  const isProcessingRewardRef = useRef(false);
 
   const startSync = (tgUser: TelegramUser) => {
     logger.log('Sync', 'Establishing Real-time listener...');
@@ -274,15 +273,19 @@ export default function UserApp() {
           if (!prev) return data;
 
           // Optimization: check if we should strictly follow the server or trust our optimistic state
-          const isRecentUpdate = Date.now() - lastOptimisticUpdateRef.current < 8000;
+          const nowMs = Date.now();
+          const isRecentUpdate = nowMs - lastOptimisticUpdateRef.current < 8000;
           
           let adsWatchedToday = data.adsWatchedToday;
           let balance = data.balance;
+          let tasksCompleted = data.tasksCompleted;
 
           if (isRecentUpdate) {
             // Keep the higher value if we just updated locally to prevent flickering/reverting
             adsWatchedToday = Math.max(data.adsWatchedToday || 0, prev.adsWatchedToday || 0);
             balance = Math.max(data.balance || 0, prev.balance || 0);
+            tasksCompleted = Math.max(data.tasksCompleted || 0, prev.tasksCompleted || 0);
+            logger.log('Sync', 'Optimistic merge', { serverAds: data.adsWatchedToday, localAds: prev.adsWatchedToday });
           }
 
           if (
@@ -293,13 +296,14 @@ export default function UserApp() {
             prev.preferredCurrency === data.preferredCurrency &&
             prev.xp === data.xp &&
             prev.adsWatchedToday === adsWatchedToday &&
+            prev.tasksCompleted === tasksCompleted &&
             prev.pendingWithdrawalBalance === data.pendingWithdrawalBalance &&
             prev.lastWithdrawalAt === data.lastWithdrawalAt
           ) {
             return prev;
           }
           
-          return { ...data, adsWatchedToday, balance };
+          return { ...data, adsWatchedToday, balance, tasksCompleted };
         });
         localStorage.setItem('pepe_profile_cache', JSON.stringify(data));
         setLoading(false);
@@ -364,69 +368,72 @@ export default function UserApp() {
   }, [isLimitReached]);
 
   const handleWatchAd = async () => {
-    if (!user || !profile) return;
+    if (!user || !profile || isProcessingRewardRef.current) return;
     
+    if (adState === 'cooldown' || adState === 'loading') {
+      logger.log('Ads', 'Blocked: state is ' + adState);
+      return;
+    }
+
     const check = adService.canWatchAd(profile);
     if (!check.canWatch) {
       if (check.reason?.includes('limit')) setIsLimitReached(true);
+      if (window.Telegram?.WebApp?.showAlert) {
+        window.Telegram.WebApp.showAlert(check.reason || 'Ad limit reached');
+      }
       return;
     }
 
     setAdState('loading');
-    
+    logger.log('Ads', 'Launching GigaPub ad...');
+
     try {
       if (typeof window.showGiga === 'function') {
-        logger.log('Ads', 'Triggering Gigapub ad...');
-        await window.showGiga();
-        logger.log('Ads', 'Ad completed successfully');
-        await completeAd();
+        window.showGiga()
+          .then(async () => {
+            logger.log('Ads', 'GigaPub ad completed successfully');
+            await completeAd();
+          })
+          .catch((err) => {
+            logger.error('Ads', 'GigaPub ad failed/closed', err);
+            setAdState('idle');
+            if (window.Telegram?.WebApp?.showAlert) {
+              window.Telegram.WebApp.showAlert('Advertisement closed or failed to load. Please try again.');
+            }
+          });
       } else {
-        // Fallback if script is not available (mostly for local testing if blocked by adblocker)
-        logger.log('Ads', 'Giga script not found, using simulation');
-        setAdProgress(0);
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        const duration = adService.getSimulatedDuration() + 5;
-        setAdTimer(duration);
-        setAdState('watching');
-        
-        const totalDuration = duration * 1000;
-        const startTime = Date.now();
-        
-        const watchInterval = setInterval(() => {
-          const elapsed = Date.now() - startTime;
-          const progress = Math.min((elapsed / totalDuration) * 100, 100);
-          setAdProgress(progress);
-          
-          const remaining = Math.max(0, Math.ceil((totalDuration - elapsed) / 1000));
-          setAdTimer(remaining);
-          
-          if (progress >= 100) {
-            clearInterval(watchInterval);
-            completeAd();
-          }
-        }, 100);
+        logger.error('Ads', 'GigaPub SDK not found');
+        setAdState('idle');
+        if (window.Telegram?.WebApp?.showAlert) {
+          window.Telegram.WebApp.showAlert('Ad service unavailable. Please check your connection or ad-blocker.');
+        } else {
+          // Fallback simulation for development if requested or just alert
+          alert('Ad service unavailable.');
+        }
       }
     } catch (err) {
-      logger.error('Ads', 'Ad display failed', err);
+      logger.error('Ads', 'Fatal error launching ad', err);
       setAdState('idle');
-      // Use Telegram's alert if possible, or just standard alert
-      if (window.Telegram?.WebApp?.showAlert) {
-        window.Telegram.WebApp.showAlert('Failed to load advertisement. Please check your connection or turn off your ad-blocker.');
-      } else {
-        alert('Failed to load advertisement. Please try again.');
-      }
     }
   };
 
   const completeAd = async () => {
-    if (!user) return;
+    if (!user || isProcessingRewardRef.current) return;
+    
+    isProcessingRewardRef.current = true;
     const reward = adService.getSimulatedReward();
-    setLastReward(reward);
-    setAdState('reward');
+    
+    setAdState('cooldown');
+    setCooldownRemaining(adService.AD_CONFIG.COOLDOWN_SECONDS);
     lastOptimisticUpdateRef.current = Date.now();
 
-    // Optimistic UI update for immediate feedback
+    // Show success toast
+    setRewardToast({ show: true, amount: reward });
+    setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
+
+    logger.log('Ads', 'Processing reward', { reward });
+
+    // Optimistic UI update
     setProfile(prev => {
       if (!prev) return prev;
       const now = new Date();
@@ -437,31 +444,21 @@ export default function UserApp() {
         ...prev,
         balance: (prev.balance || 0) + reward,
         adsWatchedToday: isNewDay ? 1 : (prev.adsWatchedToday || 0) + 1,
+        tasksCompleted: (prev.tasksCompleted || 0) + 1,
         totalEarned: (prev.totalEarned || 0) + reward,
-        lastDailyReset: isNewDay ? now : prev.lastDailyReset
+        lastDailyReset: isNewDay ? now : prev.lastDailyReset,
+        adCooldownUntil: new Date(now.getTime() + adService.AD_CONFIG.COOLDOWN_SECONDS * 1000)
       };
     });
 
     try {
-      // background update
-      adService.claimAdReward(user.id.toString(), reward, profile!).catch(err => {
-        logger.error('Ads', 'Reward claim failed', err);
-        // Snapshot listener will eventually sync the true server state
-      });
+      await adService.claimAdReward(user.id.toString(), reward, profile!);
+      logger.log('Ads', 'Reward claimed on server');
     } catch (err) {
-      logger.error('Ads', 'Fatal error during ad completion', err);
+      logger.error('Ads', 'Reward claim failed', err);
+    } finally {
+      isProcessingRewardRef.current = false;
     }
-
-    // Auto-close reward popup after 3 seconds
-    setTimeout(() => {
-      setAdState(prev => {
-        if (prev === 'reward') {
-          setCooldownRemaining(adService.AD_CONFIG.COOLDOWN_SECONDS);
-          return 'cooldown';
-        }
-        return prev;
-      });
-    }, 3000);
   };
 
   const handleClaimLevelBonus = async () => {
@@ -500,13 +497,26 @@ export default function UserApp() {
           
           const now = Date.now();
           const lastLoginTime = data.lastLogin?.seconds ? data.lastLogin.seconds * 1000 : 0;
-          const needsUpdate = (now - lastLoginTime) > 300000; // 5 minutes
+          const timeSinceLastLogin = now - lastLoginTime;
           
-          const isValid = (id: any) => id && id !== 'null' && id !== 'undefined' && id !== '';
-          let currentReferredBy = isValid(data.referredBy) ? data.referredBy : null;
-          const canBeReferred = !currentReferredBy && !data.referralProcessed && isValid(referralId) && referralId !== userId;
+          const isValidReferralId = (id: any) => id && id !== 'null' && id !== 'undefined' && id !== '';
+          let currentReferredBy = isValidReferralId(data.referredBy) ? data.referredBy : null;
+          const canBeReferred = !currentReferredBy && !data.referralProcessed && isValidReferralId(referralId) && referralId !== userId;
 
-          if (needsUpdate || !data.referralCode || canBeReferred) {
+          // 2. Determine if metadata update is needed
+          let metadataNeedsUpdate = false;
+          if (timeSinceLastLogin > 300000) metadataNeedsUpdate = true;
+          if (!data.referralCode) metadataNeedsUpdate = true;
+          if (canBeReferred) metadataNeedsUpdate = true;
+          
+          // Additional checks for structural missing fields (from previous versions)
+          if (data.totalAdRewards === undefined) metadataNeedsUpdate = true;
+          if (data.adCooldownUntil === undefined) metadataNeedsUpdate = true;
+          if (data.lastDailyReset === undefined) metadataNeedsUpdate = true;
+          if (data.adsWatchedToday === undefined) metadataNeedsUpdate = true;
+          if (data.tasksCompleted === undefined) metadataNeedsUpdate = true;
+
+          if (metadataNeedsUpdate) {
             logger.log('Sync', 'Updating user profile metadata...', { canBeReferred, referralId });
             const updates: any = {
               lastLogin: serverTimestamp(),
@@ -530,22 +540,14 @@ export default function UserApp() {
               currentReferredBy = referralId;
             }
 
-            // Initialize missing upgrade fields ONLY if they are truly missing to avoid redundant writes
-            let needsUpdate = false;
-            
-            if (data.totalAdRewards === undefined) { updates.totalAdRewards = 0; needsUpdate = true; }
-            if (data.adCooldownUntil === undefined) { updates.adCooldownUntil = null; needsUpdate = true; }
-            if (data.lastDailyReset === undefined) { updates.lastDailyReset = serverTimestamp(); needsUpdate = true; }
-            if (data.adsWatchedToday === undefined) { updates.adsWatchedToday = 0; needsUpdate = true; }
-            if (data.tasksCompleted === undefined) { updates.tasksCompleted = 0; needsUpdate = true; }
-            if (!data.taskHistory) { updates.taskHistory = []; needsUpdate = true; }
+            if (data.totalAdRewards === undefined) updates.totalAdRewards = 0;
+            if (data.adCooldownUntil === undefined) updates.adCooldownUntil = null;
+            if (data.lastDailyReset === undefined) updates.lastDailyReset = serverTimestamp();
+            if (data.adsWatchedToday === undefined) updates.adsWatchedToday = 0;
+            if (data.tasksCompleted === undefined) updates.tasksCompleted = 0;
 
-            if (Object.keys(updates).length > 0 && needsUpdate) {
-              await updateDoc(userRef, sanitizeFirestoreData(updates));
-              logger.log('Sync', 'Profile update complete');
-            } else {
-              logger.log('Sync', 'Profile already up to date');
-            }
+            await updateDoc(userRef, sanitizeFirestoreData(updates));
+            logger.log('Sync', 'Profile update complete');
           }
 
           // Important: use currentReferredBy which might have just been updated
@@ -592,7 +594,6 @@ export default function UserApp() {
             totalAdRewards: 0,
             adCooldownUntil: null,
             lastDailyReset: serverTimestamp(),
-            taskHistory: [],
             lastAdWatchTime: null,
             createdAt: serverTimestamp(),
             lastLogin: serverTimestamp()
@@ -856,98 +857,6 @@ export default function UserApp() {
           {activeTab === 'home' && <PepePriceTicker preferredCurrency={profile?.preferredCurrency} />}
         </main>
 
-        {/* Ad Overlay */}
-        <AnimatePresence>
-          {(adState === 'loading' || adState === 'watching') && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 z-[200] bg-white/95 backdrop-blur-2xl flex flex-col items-center justify-center p-12 text-center"
-            >
-              <div className="relative mb-20 scale-125">
-                <div className="absolute -inset-10 bg-emerald-500/[0.15] blur-3xl rounded-full animate-pulse"></div>
-                <div className="w-28 h-28 rounded-[40px] bg-white border border-slate-100 flex items-center justify-center relative z-10 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)]">
-                  {adState === 'loading' ? (
-                     <Loader2 size={48} className="text-slate-900 animate-spin" strokeWidth={3} />
-                  ) : (
-                     <PlayCircle size={48} className="text-slate-900 animate-pulse" strokeWidth={3} />
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-20">
-                <h3 className="text-2xl font-black tracking-[0.25em] text-slate-900 uppercase italic font-display">
-                  {adState === 'loading' ? 'Loading...' : 'Mined Link'}
-                </h3>
-                <div className="flex items-center justify-center gap-3">
-                  <Timer size={16} className="text-emerald-500" />
-                  <p className="text-[12px] font-black text-slate-500 uppercase tracking-[0.3em]">
-                    {adTimer}S Remaining
-                  </p>
-                </div>
-              </div>
-
-              <div className="w-full max-w-[260px] space-y-6">
-                <div className="h-2.5 w-full bg-slate-50 rounded-full overflow-hidden border border-slate-100 p-0.5 shadow-inner">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${adProgress}%` }}
-                    className="h-full bg-slate-900 rounded-full shadow-sm relative overflow-hidden"
-                    transition={{ type: "tween", ease: "linear" }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
-                  </motion.div>
-                </div>
-                <div className="flex justify-between items-center px-1">
-                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{Math.round(adProgress)}% SYNC</span>
-                   <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest animate-pulse">Securing...</span>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Reward Success */}
-        <AnimatePresence>
-          {adState === 'reward' && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-x-0 top-1/3 z-[210] flex flex-col items-center justify-center p-6 pointer-events-none"
-            >
-              <motion.div 
-                initial={{ scale: 0.9, y: 10 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.9, y: 10 }}
-                className="bg-white/95 backdrop-blur-xl rounded-[32px] p-6 border border-slate-100 text-center relative z-10 flex flex-col items-center w-[260px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.1)] pointer-events-auto"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center mb-4 border border-emerald-100/50 shadow-inner relative group">
-                  <CheckCircle2 size={24} className="text-emerald-600 relative z-10" strokeWidth={3} />
-                </div>
-                
-                <h3 className="text-sm font-black tracking-widest text-slate-900 mb-1 uppercase">Protocol Synced</h3>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-4">Mined Reward Found</p>
-                
-                <div className="bg-slate-50/50 rounded-2xl py-3 px-4 border border-slate-100/50 mb-5 w-full text-center relative overflow-hidden group">
-                  <div className="text-2xl font-black text-slate-900 tabular-nums tracking-tight relative z-10 font-display italic">+{lastReward} PEPE</div>
-                </div>
-
-                <button 
-                  onClick={() => {
-                    setAdState('cooldown');
-                    setCooldownRemaining(adService.AD_CONFIG.COOLDOWN_SECONDS);
-                  }}
-                  className="w-full h-10 bg-slate-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest active:scale-[0.96] transition-all shadow-lg shadow-slate-200 hover:bg-slate-800"
-                >
-                  Accept Reward
-                </button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         <CurrencyModal 
           isOpen={isCurrencyModalOpen}
           onClose={() => setIsCurrencyModalOpen(false)}
@@ -958,6 +867,26 @@ export default function UserApp() {
             }
           }}
         />
+
+        {/* Reward Success Toast */}
+        <AnimatePresence>
+          {rewardToast.show && (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[200] bg-slate-900 text-white px-6 py-4 rounded-[24px] shadow-2xl flex items-center gap-4 border border-white/10 backdrop-blur-md"
+            >
+              <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <CheckCircle2 size={24} className="text-white" strokeWidth={3} />
+              </div>
+              <div className="flex flex-col pr-2">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Earned</span>
+                <span className="text-xl font-black italic tracking-tight italic">+{rewardToast.amount} PEPE</span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {showDebug && (
           <div className="absolute inset-0 z-[300] bg-white p-8 overflow-y-auto text-[11px] font-mono">

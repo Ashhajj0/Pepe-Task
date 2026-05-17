@@ -46,12 +46,18 @@ export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaini
             className={`w-full h-14 rounded-2xl flex items-center justify-center font-black text-[11px] uppercase tracking-widest transition-all ${
               isLimitReached 
               ? 'bg-slate-100 text-slate-300 pointer-events-none' 
-              : adState === 'cooldown'
-                ? 'bg-slate-50 border border-slate-100 text-slate-400'
-                : 'bg-slate-900 text-white shadow-lg shadow-slate-200 active:scale-[0.98]'
+              : adState === 'idle'
+                ? 'bg-slate-900 text-white shadow-lg shadow-slate-200 active:scale-[0.98]'
+                : 'bg-slate-50 border border-slate-100 text-slate-400'
             }`}
           >
-            {isLimitReached ? 'Daily Limit Reached' : adState === 'cooldown' ? `Next In (${cooldownRemaining}s)` : 'Watch to Earn'}
+            {isLimitReached 
+              ? 'Daily Limit Reached' 
+              : adState === 'loading' 
+                ? 'Loading Ad...' 
+                : adState === 'cooldown' 
+                  ? `Next In (${cooldownRemaining}s)` 
+                  : 'Watch to Earn'}
           </button>
         </div>
 

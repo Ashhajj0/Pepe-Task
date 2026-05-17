@@ -40,11 +40,6 @@ export interface UserProfile {
   totalAdRewards?: number;
   adCooldownUntil?: any;
   lastDailyReset?: any;
-  taskHistory?: Array<{
-    type: string;
-    reward: number;
-    completedAt: any;
-  }>;
   isBanned?: boolean;
   walletAddressOrBinanceId?: string;
   totalWithdrawalsCount?: number;

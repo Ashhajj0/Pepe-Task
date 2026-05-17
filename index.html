@@ -47,30 +47,10 @@
               tg.WebApp = {};
             }
             
-            // Check if we need to override or provide CloudStorage
-            var current = null;
-            try { current = tg.WebApp.CloudStorage; } catch (e) {}
-
-            if (!current || current === storagePolyfill) {
-              // We use defineProperty to ensure we can catch any access and provide our polyfill
-              // Some versions of the SDK might try to log errors when CloudStorage is accessed
-              Object.defineProperty(tg.WebApp, 'CloudStorage', {
-                get: function() { 
-                  return storagePolyfill; 
-                },
-                set: function(v) {
-                  // Allow overwriting but only if it's not the null/undefined the SDK might set
-                  if (v) storagePolyfill = v;
-                },
-                configurable: true,
-                enumerable: true
-              });
-            }
-            
-            // Minor hack: if version is too low, some SDK features log errors
-            // We set it to 6.9 which is the minimum for CloudStorage
+            // 1. Force version to 6.9+ to satisfy SDK checks for CloudStorage
             try {
-              if (!tg.WebApp.version || parseFloat(tg.WebApp.version) < 6.9) {
+              var currentVersion = tg.WebApp.version;
+              if (!currentVersion || parseFloat(currentVersion) < 6.9) {
                 Object.defineProperty(tg.WebApp, 'version', {
                   value: '6.9',
                   writable: true,
@@ -79,9 +59,27 @@
                 });
               }
             } catch (vErr) {}
-          } catch (e) {
-            // Silence errors
-          }
+
+            // 2. Polyfill isVersionAtLeast
+            if (!tg.WebApp.isVersionAtLeast) {
+              tg.WebApp.isVersionAtLeast = function(v) {
+                return true; // We claim to support everything
+              };
+            }
+
+            // 3. Polyfill CloudStorage
+            var currentStorage = null;
+            try { currentStorage = tg.WebApp.CloudStorage; } catch (e) {}
+
+            if (!currentStorage || currentStorage === storagePolyfill || (currentStorage.setItem && currentStorage.setItem.toString().indexOf('not supported') !== -1)) {
+              Object.defineProperty(tg.WebApp, 'CloudStorage', {
+                get: function() { return storagePolyfill; },
+                set: function(v) { if (v && v !== storagePolyfill) storagePolyfill = v; },
+                configurable: true,
+                enumerable: true
+              });
+            }
+          } catch (e) {}
         }
 
         // Run immediately to catch it before SDK loads

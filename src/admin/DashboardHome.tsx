@@ -78,9 +78,6 @@ export const DashboardHome: React.FC = () => {
     );
   }
 
-  // GigaPub estimation: $0.002 per ad watch as a placeholder
-  const estimatedGigaPubRevenue = (stats?.totalAdsWatched || 0) * 0.002;
-
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-20">
       <div className="flex justify-between items-end">
@@ -124,44 +121,6 @@ export const DashboardHome: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-slate-900 rounded-[32px] p-10 text-white flex flex-col relative overflow-hidden shadow-2xl shadow-slate-200">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl -mr-40 -mt-40" />
-            
-            <div className="flex items-center justify-between mb-12">
-              <div className="p-3 bg-white/10 w-fit rounded-xl backdrop-blur-md border border-white/5">
-                  <TrendingUp size={24} className="text-emerald-400" />
-              </div>
-              <div className="px-4 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-[10px] font-black tracking-widest text-emerald-400">
-                GIGAPUB PARTNER
-              </div>
-            </div>
-            
-            <h3 className="text-4xl font-black mb-2 tracking-tighter uppercase italic">GigaPub Stats</h3>
-            <p className="text-slate-400 text-sm mb-12 font-medium">Estimated ad revenue based on network impressions.</p>
-            
-            <div className="grid grid-cols-2 gap-10">
-              <div>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Est. Earnings</p>
-                <h4 className="text-5xl font-black text-emerald-400 tracking-tighter italic">
-                  ${estimatedGigaPubRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </h4>
-              </div>
-              <div className="border-l border-white/5 pl-10">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Total Impressions</p>
-                <h4 className="text-3xl font-bold text-white tracking-tight">
-                  {stats?.totalAdsWatched.toLocaleString()}
-                </h4>
-              </div>
-            </div>
-
-            <div className="mt-12 pt-8 border-t border-white/5">
-               <div className="flex items-center gap-3">
-                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Traffic Stream: Active</span>
-               </div>
-            </div>
-        </div>
-
         <div className="bg-white rounded-[32px] border border-slate-100 p-10 shadow-sm flex flex-col justify-center">
             <h3 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Network Health</h3>
             <p className="text-slate-400 mb-10 font-medium">System performance and load distribution logs.</p>

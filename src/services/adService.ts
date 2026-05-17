@@ -6,8 +6,8 @@ import { sanitizeFirestoreData, safeDate } from '../lib/utils/firestore';
 export const AD_CONFIG = {
   DAILY_LIMIT: 15,
   COOLDOWN_SECONDS: 10,
-  REWARD_MIN: 0,
-  REWARD_MAX: 100,
+  REWARD_MIN: 50,
+  REWARD_MAX: 150,
   AD_DURATION_MIN: 1,
   AD_DURATION_MAX: 2,
 };
@@ -51,6 +51,7 @@ export const getSimulatedDuration = () => {
 
 export const claimAdReward = async (userId: string, reward: number, currentProfile: UserProfile) => {
   const userRef = doc(db, 'users', userId);
+  console.log(`[adService] Starting claimAdReward for user ${userId}, reward: ${reward}`);
 
   try {
     const result = await runTransaction(db, async (transaction) => {
@@ -58,6 +59,7 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       if (!userSnap.exists()) throw new Error('User not found');
       
       const userData = userSnap.data() as UserProfile;
+      const currentAdsCount = userData.adsWatchedToday || 0;
       
       // Daily Reset Logic check inside transaction
       const now = new Date();
@@ -65,8 +67,10 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       const lastResetStr = safeDate(userData.lastDailyReset).toDateString();
       const isNewDay = todayStr !== lastResetStr;
       
-      const nextAdsCount = isNewDay ? 1 : (userData.adsWatchedToday || 0) + 1;
+      const nextAdsCount = isNewDay ? 1 : currentAdsCount + 1;
       
+      console.log(`[adService] User ${userId}: currentAds: ${currentAdsCount}, nextAds: ${nextAdsCount}, isNewDay: ${isNewDay}`);
+
       if (nextAdsCount > AD_CONFIG.DAILY_LIMIT) {
         throw new Error('Daily limit reached');
       }
@@ -90,16 +94,6 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       
       const levelProgress = Math.floor((newXp / xpForNextLevel) * 100);
 
-      // Task History Logic (Keep last 30)
-      const newEntry = {
-        type: 'AD_WATCH',
-        reward: reward,
-        completedAt: serverTimestamp()
-      };
-      
-      let history = userData.taskHistory || [];
-      history = [newEntry, ...history].slice(0, 30);
-
       const nextCooldown = new Date(now.getTime() + AD_CONFIG.COOLDOWN_SECONDS * 1000);
 
       const updateData: any = {
@@ -112,12 +106,12 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         adCooldownUntil: Timestamp.fromDate(nextCooldown),
         level: newLevel,
         xp: newXp,
-        levelProgress: levelProgress,
-        taskHistory: history
+        levelProgress: levelProgress
       };
 
       if (isNewDay || !userData.lastDailyReset) {
-        updateData.lastDailyReset = serverTimestamp();
+        // Use local now for immediate consistency in next transaction read
+        updateData.lastDailyReset = Timestamp.fromDate(now);
       }
 
       transaction.update(userRef, sanitizeFirestoreData(updateData));
@@ -133,6 +127,7 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
         const referralRef = doc(db, 'referrals', referralId);
         
         if (commission > 0) {
+          console.log(`[adService] Crediting commission ${commission} to referrer ${referredBy}`);
           transaction.update(referrerRef, {
             balance: increment(commission),
             referralEarnings: increment(commission),
@@ -150,9 +145,10 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       return { reward, leveledUp: newLevel > userData.level };
     });
 
+    console.log(`[adService] Transaction success for user ${userId}. Reward: ${reward}`);
     return { success: true, ...result };
   } catch (error) {
-    console.error('Error claiming reward:', error);
+    console.error('[adService] Error claiming reward:', error);
     throw error;
   }
 };

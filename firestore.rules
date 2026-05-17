@@ -52,7 +52,7 @@ service cloud.firestore {
           'adsWatchedToday', 'tasksCompleted', 'xp', 'level', 
           'levelProgress', 'lastLogin', 'preferredCurrency',
           'totalAdRewards', 'adCooldownUntil', 'lastDailyReset', 
-          'taskHistory', 'referralEarnings', 'totalReferrals'
+          'referralEarnings', 'totalReferrals'
         ])
       )) || isAdmin();
     }

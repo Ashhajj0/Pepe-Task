@@ -10,16 +10,16 @@ function removeUndefined(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(item => removeUndefined(item));
   } else if (obj !== null && typeof obj === 'object' && !(obj instanceof Date)) {
-    // Check for Firestore specifics
-    if (obj.constructor && (obj.constructor.name === 'FieldValue' || obj.constructor.name === 'Timestamp')) {
+    // Check for Firestore specifics (FieldValue, Timestamp, etc)
+    // We check for common properties that indicate a internal Firestore object
+    if (
+      (obj.constructor && (obj.constructor.name === 'FieldValue' || obj.constructor.name === 'Timestamp')) ||
+      ('_methodName' in obj) || // FieldValue
+      ('seconds' in obj && 'nanoseconds' in obj) // Timestamp
+    ) {
       return obj;
     }
     
-    // Check for the keys reported in the error {Fc, _methodName}
-    if ('Fc' in obj && '_methodName' in obj) {
-      return obj;
-    }
-
     const newObj: any = {};
     Object.keys(obj).forEach(key => {
       const val = obj[key];
