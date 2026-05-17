@@ -52,7 +52,7 @@ export const AdminService = {
 
   // Users Management
   subscribeToUsers(callback: (users: UserProfile[]) => void) {
-    const q = query(collection(db, 'users'), orderBy('lastLogin', 'desc'), limit(500));
+    const q = query(collection(db, 'users'), orderBy('createdAt', 'asc'), limit(500));
     return onSnapshot(q, (snapshot) => {
       const users = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as unknown as UserProfile));
       callback(users);

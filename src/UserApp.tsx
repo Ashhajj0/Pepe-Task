@@ -658,6 +658,7 @@ export default function UserApp() {
           if (data.lastDailyReset === undefined) metadataNeedsUpdate = true;
           if (data.adsWatchedToday === undefined) metadataNeedsUpdate = true;
           if (data.tasksCompleted === undefined) metadataNeedsUpdate = true;
+          if (data.createdAt === undefined) metadataNeedsUpdate = true;
 
           if (metadataNeedsUpdate) {
             logger.log('Sync', 'Updating user profile metadata...', { canBeReferred, referralId });
@@ -688,6 +689,7 @@ export default function UserApp() {
             if (data.lastDailyReset === undefined) updates.lastDailyReset = serverTimestamp();
             if (data.adsWatchedToday === undefined) updates.adsWatchedToday = 0;
             if (data.tasksCompleted === undefined) updates.tasksCompleted = 0;
+            if (data.createdAt === undefined) updates.createdAt = serverTimestamp();
 
             await updateDoc(userRef, sanitizeFirestoreData(updates));
             logger.log('Sync', 'Profile update complete');
