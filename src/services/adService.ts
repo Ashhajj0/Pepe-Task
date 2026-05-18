@@ -6,7 +6,7 @@ import { sanitizeFirestoreData, safeDate } from '../lib/utils/firestore';
 export const AD_CONFIG = {
   DAILY_LIMIT: 15,
   COOLDOWN_SECONDS: 10,
-  REWARD_MIN: 0,
+  REWARD_MIN: 20,
   REWARD_MAX: 100,
   AD_DURATION_MIN: 1,
   AD_DURATION_MAX: 2,

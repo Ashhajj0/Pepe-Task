@@ -68,7 +68,7 @@ export const EarnTab = memo(({ profile, adState, tasks, dailyLimit, isLimitReach
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Available now</span>
-                <span className="text-sm font-black text-slate-900">100 PEPE Reward</span>
+                <span className="text-sm font-black text-slate-900">20-100 PEPE Reward</span>
               </div>
             </div>
             <div className="text-right">
