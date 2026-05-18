@@ -447,7 +447,7 @@ export const DashboardHome: React.FC = () => {
                       )}
                     </td>
                     <td className="px-6 py-5 bg-slate-50/50 rounded-r-2xl border-y border-r border-slate-100 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-2">
                         {editingTaskId === task.id ? (
                           <>
                             <button 
@@ -473,8 +473,8 @@ export const DashboardHome: React.FC = () => {
                             </button>
                           </>
                         )}
-                      </div>
-                    </td>
+                    </div>
+                  </td>
                   </tr>
                 ))}
               </tbody>

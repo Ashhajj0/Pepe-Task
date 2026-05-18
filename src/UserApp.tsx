@@ -601,35 +601,27 @@ export default function UserApp() {
       return;
     }
     
-    // Immediately open the link to satisfy browser requirements for user-initiated actions
+    // REDIRECTION MUST BE FIRST AND FAST
     try {
-      if (window.Telegram?.WebApp?.openTelegramLink) {
-        logger.log('Social', 'Opening via Telegram openTelegramLink');
+      if (url.includes('t.me/') && window.Telegram?.WebApp?.openTelegramLink) {
         window.Telegram.WebApp.openTelegramLink(url);
       } else if (window.Telegram?.WebApp?.openLink) {
-        logger.log('Social', 'Opening via Telegram openLink');
         window.Telegram.WebApp.openLink(url);
       } else {
-        logger.log('Social', 'Opening via window.open');
-        const win = window.open(url, '_blank', 'noopener,noreferrer');
-        if (!win) {
-          logger.log('Social', 'window.open failed, trying location.href');
-          // Fallback if window.open is blocked, though not ideal
-          // window.location.href = url; 
-        }
+        window.open(url, '_blank', 'noopener,noreferrer');
       }
       hasOpenedLinkRef.current[taskId] = true;
     } catch (e) {
       logger.error('Social', 'Link opening error', e);
     }
 
-    // Show verification modal starting at "verifying" status
+    // Still show verification but maybe start verification faster
     setSocialTaskVerify({ show: true, taskId, url, reward, status: 'verifying' });
 
-    // Auto-start verification process after transition
+    // Start verification process
     setTimeout(() => {
       verifySocialTask(taskId, reward);
-    }, 4000);
+    }, 2000); // Reduced delay for better UX
   };
 
   const verifySocialTask = async (taskId: string, reward: number) => {
