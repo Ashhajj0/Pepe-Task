@@ -90,7 +90,7 @@ export function PepePriceTicker({ preferredCurrency = 'usd' }: { preferredCurren
   const isPositive = (priceData?.usd_24h_change ?? 0) >= 0;
 
   return (
-    <div className="px-5 py-8 space-y-6">
+    <div className="px-5 py-4 space-y-6">
       <div className="flex items-center justify-between px-1">
         <h3 className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-600">Market Intelligence</h3>
         <div className="h-px flex-1 bg-zinc-900/50 ml-4"></div>

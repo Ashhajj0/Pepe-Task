@@ -16,7 +16,7 @@ import {
   queryEqual
 } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
-import { UserProfile, WithdrawalRequest } from '../types';
+import { UserProfile, WithdrawalRequest, TaskProtocol } from '../types';
 
 export interface AdminLog {
   id?: string;
@@ -212,15 +212,60 @@ export const AdminService = {
   },
 
   async updateGlobalStats(data: { manualTotalWithdrawn?: number, manualTotalAdsWatched?: number }) {
+    const { setDoc } = await import('firebase/firestore');
     const configRef = doc(db, 'system', 'config');
-    const snap = await getDoc(configRef);
-    if (!snap.exists()) {
-      const { setDoc } = await import('firebase/firestore');
-      await setDoc(configRef, data);
-    } else {
-      await updateDoc(configRef, data);
-    }
+    await setDoc(configRef, data, { merge: true });
     await this.logAction('UPDATE_GLOBAL_STATS', undefined, data);
+  },
+
+  // Task Protocols
+  subscribeToTasks(callback: (tasks: TaskProtocol[]) => void) {
+    const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, (snap) => {
+      const tasks = snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskProtocol));
+      callback(tasks);
+    });
+  },
+
+  async addTask(task: Omit<TaskProtocol, 'id' | 'createdAt'>) {
+    const taskData = {
+      ...task,
+      createdAt: serverTimestamp()
+    };
+    const docRef = await addDoc(collection(db, 'tasks'), taskData);
+    await this.logAction('ADD_TASK', undefined, { taskId: docRef.id, ...task });
+    return docRef.id;
+  },
+
+  async updateTask(taskId: string, data: Partial<TaskProtocol>) {
+    const taskRef = doc(db, 'tasks', taskId);
+    await updateDoc(taskRef, data);
+    await this.logAction('UPDATE_TASK', undefined, { taskId, ...data });
+  },
+
+  async deleteTask(taskId: string) {
+    const { deleteDoc: firestoreDeleteDoc } = await import('firebase/firestore');
+    await firestoreDeleteDoc(doc(db, 'tasks', taskId));
+    await this.logAction('DELETE_TASK', undefined, { taskId });
+  },
+
+  // System Configuration (Daily Limit)
+  subscribeToSystemConfig(callback: (config: any) => void) {
+    const configRef = doc(db, 'system', 'config');
+    return onSnapshot(configRef, (snap) => {
+      if (snap.exists()) {
+        callback(snap.data());
+      } else {
+        callback({});
+      }
+    });
+  },
+
+  async updateDailyLimit(limit: number) {
+    const { setDoc } = await import('firebase/firestore');
+    const configRef = doc(db, 'system', 'config');
+    await setDoc(configRef, { dailyLimit: limit }, { merge: true });
+    await this.logAction('UPDATE_DAILY_LIMIT', undefined, { dailyLimit: limit });
   },
 
   subscribeToRecentActivity(callback: (logs: AdminLog[]) => void) {

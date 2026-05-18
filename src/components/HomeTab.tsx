@@ -3,7 +3,8 @@ import { memo } from 'react';
 import { UserProfile, TelegramUser } from '../types';
 import { Counter } from './UIElements';
 import { safeNumber, safeString } from '../lib/utils/firestore';
-import { Trophy, Activity, Gem, ChevronRight, Users } from 'lucide-react';
+import { Trophy, Activity, Gem, ChevronRight, Users, Loader2 } from 'lucide-react';
+import { PepePriceTicker } from './PepePriceTicker';
 
 interface HomeTabProps {
   user: TelegramUser | null;
@@ -13,11 +14,12 @@ interface HomeTabProps {
   dailyProgress: number;
   userRank: string;
   handleClaimLevelBonus: () => void;
+  isProcessing?: boolean;
 }
 
-export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, dailyProgress, userRank, handleClaimLevelBonus }: HomeTabProps) => {
+export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, dailyProgress, userRank, handleClaimLevelBonus, isProcessing }: HomeTabProps) => {
   return (
-    <div className="px-6 py-6 space-y-6 min-h-full ambient-glow no-scrollbar overflow-y-auto">
+    <div className="px-6 py-6 space-y-6 ambient-glow">
       {/* Balance Card Section */}
       <motion.div 
         initial={{ opacity: 0, y: 10 }}
@@ -126,26 +128,32 @@ export const HomeTab = memo(({ user, profile, currencyDisplay, levelProgress, da
           <div className="absolute -inset-2 bg-emerald-500/20 blur-2xl rounded-[40px] animate-pulse"></div>
           <button 
             onClick={handleClaimLevelBonus}
-            className="w-full relative h-20 card hover:bg-slate-50 rounded-[28px] transition-all active:scale-[0.97] flex items-center justify-between px-8 group border-emerald-50"
+            disabled={isProcessing}
+            className="w-full relative h-20 card hover:bg-slate-50 rounded-[28px] transition-all active:scale-[0.97] flex items-center justify-between px-8 group border-emerald-50 disabled:opacity-50 disabled:active:scale-100"
           >
             <div className="flex items-center gap-5">
               <div className="w-12 h-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-xl shadow-emerald-500/30">
-                <Trophy size={22} fill="currentColor" />
+                {isProcessing ? <Loader2 size={22} className="animate-spin" /> : <Trophy size={22} fill="currentColor" />}
               </div>
               <div className="flex flex-col text-left">
                 <span className="text-[12px] font-black text-slate-900 uppercase tracking-tight">Promotion Bonus</span>
-                <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-0.5">Reward Dispatch Pending</span>
+                <span className="text-[8px] font-bold text-emerald-600 uppercase tracking-[0.2em] mt-0.5">
+                  {isProcessing ? 'Verifying Transaction...' : 'Reward Dispatch Pending'}
+                </span>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-emerald-600 text-[10px] tracking-[0.2em] uppercase">CLAIM</span>
+              <span className="font-black text-emerald-600 text-[10px] tracking-[0.2em] uppercase">{isProcessing ? 'SYNCING' : 'CLAIM'}</span>
               <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center">
-                <ChevronRight size={14} className="text-emerald-500" />
+                {isProcessing ? <Loader2 size={12} className="text-emerald-500 animate-spin" /> : <ChevronRight size={14} className="text-emerald-500" />}
               </div>
             </div>
           </button>
         </div>
       )}
+
+      {/* Market Data */}
+      <PepePriceTicker preferredCurrency={profile?.preferredCurrency} />
     </div>
   );
 });

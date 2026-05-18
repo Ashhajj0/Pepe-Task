@@ -71,6 +71,15 @@ export interface ReferralRecord {
   totalCommissionPaid: number;
 }
 
+export interface TaskProtocol {
+  id: string;
+  name: string;
+  reward: number;
+  link: string;
+  status: 'active' | 'paused';
+  createdAt?: any;
+}
+
 declare global {
   interface Window {
     Telegram: {

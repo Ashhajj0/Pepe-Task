@@ -68,16 +68,35 @@
             }
 
             // 3. Polyfill CloudStorage
-            var currentStorage = null;
-            try { currentStorage = tg.WebApp.CloudStorage; } catch (e) {}
+            var descriptor = Object.getOwnPropertyDescriptor(tg.WebApp, 'CloudStorage');
+            var isMyPolyfill = descriptor && (descriptor.get && descriptor.get.isMyPolyfill);
+            
+            if (!isMyPolyfill) {
+              var needsPolyfill = false;
+              try {
+                if (!tg.WebApp.isVersionAtLeast || !tg.WebApp.isVersionAtLeast('6.9')) {
+                  needsPolyfill = true;
+                } else {
+                  // Even if version says okay, double check it doesn't throw or isn't a mock
+                  var cs = tg.WebApp.CloudStorage;
+                  if (!cs || (cs.setItem && cs.setItem.toString().indexOf('not supported') !== -1)) {
+                    needsPolyfill = true;
+                  }
+                }
+              } catch (e) {
+                needsPolyfill = true;
+              }
 
-            if (!currentStorage || currentStorage === storagePolyfill || (currentStorage.setItem && currentStorage.setItem.toString().indexOf('not supported') !== -1)) {
-              Object.defineProperty(tg.WebApp, 'CloudStorage', {
-                get: function() { return storagePolyfill; },
-                set: function(v) { if (v && v !== storagePolyfill) storagePolyfill = v; },
-                configurable: true,
-                enumerable: true
-              });
+              if (needsPolyfill) {
+                var getter = function() { return storagePolyfill; };
+                getter.isMyPolyfill = true;
+                Object.defineProperty(tg.WebApp, 'CloudStorage', {
+                  get: getter,
+                  set: function(v) { if (v && v !== storagePolyfill) storagePolyfill = v; },
+                  configurable: true,
+                  enumerable: true
+                });
+              }
             }
           } catch (e) {}
         }

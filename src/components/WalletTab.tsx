@@ -15,7 +15,7 @@ export const WalletTab = memo(({ profile, currencyDisplay, updateProfile }: Wall
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
 
   return (
-    <div className="px-6 py-6 space-y-6 min-h-full bg-slate-50/30 pb-32 no-scrollbar overflow-y-auto">
+    <div className="px-6 py-6 space-y-6 bg-slate-50/30">
       <div className="flex flex-col gap-1">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Portfolio Overview</h2>
         <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest opacity-60 italic">Secured Data Node</p>

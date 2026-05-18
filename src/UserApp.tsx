@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState, useRef, useMemo } from 'react';
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, serverTimestamp, increment, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, serverTimestamp, increment, runTransaction, query, collection, where } from 'firebase/firestore';
 import { 
   Wallet, Trophy, Target, LayoutDashboard, 
   Settings, Loader2, PlayCircle, ArrowUpRight, 
@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { db } from './lib/firebase';
-import { TelegramUser, UserProfile } from './types';
+import { TelegramUser, UserProfile, TaskProtocol } from './types';
 import * as adService from './services/adService';
 import * as currencyService from './services/currencyService';
 
@@ -47,6 +47,8 @@ export default function UserApp() {
     } catch (e) {}
     return null;
   });
+  const [tasks, setTasks] = useState<TaskProtocol[]>([]);
+  const [systemConfig, setSystemConfig] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
   const [initStep, setInitStep] = useState<string>('Initializing...');
@@ -58,7 +60,9 @@ export default function UserApp() {
   const [adState, setAdState] = useState<'idle' | 'loading' | 'cooldown'>('idle');
   const [referralParam, setReferralParam] = useState<string | null>(null);
   const [rewardToast, setRewardToast] = useState<{ show: boolean, amount: number }>({ show: false, amount: 0 });
+  const [statusToast, setStatusToast] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'info' }>({ show: false, message: '', type: 'info' });
   const [levelUpData, setLevelUpData] = useState<{ show: boolean, level: number, bonus: number }>({ show: false, level: 0, bonus: 0 });
+  const [isProcessing, setIsProcessing] = useState(false);
   const [socialTaskVerify, setSocialTaskVerify] = useState<{ show: boolean, taskId: string, url: string, reward: number, status: 'idle' | 'opening' | 'verifying' | 'failed' | 'success' }>({ show: false, taskId: '', url: '', reward: 0, status: 'idle' });
   const hasOpenedLinkRef = useRef<Record<string, boolean>>({});
 
@@ -132,8 +136,9 @@ export default function UserApp() {
   }, [profile?.balance, profile?.preferredCurrency, pepePrice]);
 
   const dailyProgress = useMemo(() => {
-    return (safeNumber(profile?.adsWatchedToday) / 15) * 100;
-  }, [profile?.adsWatchedToday]);
+    const limit = systemConfig?.dailyLimit || 15;
+    return (safeNumber(profile?.adsWatchedToday) / limit) * 100;
+  }, [profile?.adsWatchedToday, systemConfig?.dailyLimit]);
 
   const levelProgress = useMemo(() => {
     return safeNumber(profile?.levelProgress);
@@ -266,8 +271,19 @@ export default function UserApp() {
   const startSync = (tgUser: TelegramUser) => {
     logger.log('Sync', 'Establishing Real-time listener...');
     const userRef = doc(db, 'users', tgUser.id.toString());
+    const tasksQuery = query(collection(db, 'tasks'), where('status', '==', 'active'));
+    const configRef = doc(db, 'system', 'config');
+
+    const unsubTasks = onSnapshot(tasksQuery, (snap) => {
+      const taskList = snap.docs.map(d => ({ id: d.id, ...d.data() } as TaskProtocol));
+      setTasks(taskList);
+    });
+
+    const unsubConfig = onSnapshot(configRef, (snap) => {
+      if (snap.exists()) setSystemConfig(snap.data());
+    });
     
-    return onSnapshot(userRef, (docSnap) => {
+    const unsubUser = onSnapshot(userRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data() as UserProfile;
         
@@ -367,6 +383,12 @@ export default function UserApp() {
     }, (err) => {
       logger.error('Sync', 'Firestore listener failed', err);
     });
+
+    return () => {
+      unsubUser();
+      unsubTasks();
+      unsubConfig();
+    };
   };
 
   useEffect(() => {
@@ -428,6 +450,11 @@ export default function UserApp() {
     return () => clearInterval(interval);
   }, [isLimitReached]);
 
+  const showStatus = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setStatusToast({ show: true, message, type });
+    setTimeout(() => setStatusToast(prev => ({ ...prev, show: false })), 3000);
+  };
+
   const handleWatchAd = async () => {
     if (!user || !profile || isProcessingRewardRef.current) return;
     
@@ -436,7 +463,7 @@ export default function UserApp() {
       return;
     }
 
-    const check = adService.canWatchAd(profile);
+    const check = adService.canWatchAd(profile, systemConfig?.dailyLimit);
     if (!check.canWatch) {
       if (check.reason?.includes('limit')) setIsLimitReached(true);
       if (window.Telegram?.WebApp?.showAlert) {
@@ -458,19 +485,12 @@ export default function UserApp() {
           .catch((err) => {
             logger.error('Ads', 'GigaPub ad failed/closed', err);
             setAdState('idle');
-            if (window.Telegram?.WebApp?.showAlert) {
-              window.Telegram.WebApp.showAlert('Advertisement closed or failed to load. Please try again.');
-            }
+            showStatus('Advertisement closed or failed to load.', 'error');
           });
       } else {
         logger.error('Ads', 'GigaPub SDK not found');
         setAdState('idle');
-        if (window.Telegram?.WebApp?.showAlert) {
-          window.Telegram.WebApp.showAlert('Ad service unavailable. Please check your connection or ad-blocker.');
-        } else {
-          // Fallback simulation for development if requested or just alert
-          alert('Ad service unavailable.');
-        }
+        showStatus('Ad service unavailable.', 'error');
       }
     } catch (err) {
       logger.error('Ads', 'Fatal error launching ad', err);
@@ -539,36 +559,38 @@ export default function UserApp() {
   };
 
   const handleClaimLevelBonus = async () => {
-    if (!user || !profile || isProcessingRewardRef.current) return;
+    if (!user || !profile || isProcessingRewardRef.current || isProcessing) return;
     
     const unclaimedLevels = (profile.level || 1) - (profile.lastClaimedLevel || 1);
     if (unclaimedLevels <= 0) return;
 
     const bonusAmount = unclaimedLevels * 500;
     isProcessingRewardRef.current = true;
-
-    // Optimistic update
-    setProfile(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        balance: (prev.balance || 0) + bonusAmount,
-        totalEarned: (prev.totalEarned || 0) + bonusAmount,
-        lastClaimedLevel: prev.level
-      };
-    });
-
-    // Show success toast
-    setRewardToast({ show: true, amount: bonusAmount });
-    setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
+    setIsProcessing(true);
 
     try {
-      await adService.claimLevelBonus(user.id.toString(), profile);
-      logger.log('Ads', 'Level bonus claimed successfully');
+      const result = await adService.claimLevelBonus(user.id.toString(), profile);
+      logger.log('Ads', 'Level bonus claimed successfully', result);
+      
+      // Optimistic update AFTER success response for more accuracy with multiple levels
+      setProfile(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          balance: (prev.balance || 0) + bonusAmount,
+          totalEarned: (prev.totalEarned || 0) + bonusAmount,
+          lastClaimedLevel: profile.level
+        };
+      });
+
+      setRewardToast({ show: true, amount: bonusAmount });
+      setTimeout(() => setRewardToast({ show: false, amount: 0 }), 3000);
     } catch (err) {
       logger.error('Ads', 'Level bonus claim failed', err);
+      showStatus('Failed to claim bonus. Try again.', 'error');
     } finally {
       isProcessingRewardRef.current = false;
+      setIsProcessing(false);
     }
   };
 
@@ -994,54 +1016,66 @@ export default function UserApp() {
           {/* Subtle Ambient light for content area */}
           <div className="fixed inset-x-0 top-32 h-[500px] bg-emerald-500/[0.03] blur-[150px] rounded-full -z-10 pointer-events-none"></div>
           
-          {activeTab === 'home' && (
-            <HomeTab 
-              user={user}
-              profile={profile}
-              currencyDisplay={currencyDisplay}
-              levelProgress={levelProgress}
-              dailyProgress={dailyProgress}
-              userRank={userRank}
-              handleClaimLevelBonus={handleClaimLevelBonus}
-            />
-          )}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15 }}
+              className="w-full"
+            >
+              {activeTab === 'home' && (
+                <HomeTab 
+                  user={user}
+                  profile={profile}
+                  currencyDisplay={currencyDisplay}
+                  levelProgress={levelProgress}
+                  dailyProgress={dailyProgress}
+                  userRank={userRank}
+                  handleClaimLevelBonus={handleClaimLevelBonus}
+                  isProcessing={isProcessing}
+                />
+              )}
 
-          {activeTab === 'earn' && (
-            <EarnTab 
-              profile={profile}
-              adState={adState}
-              isLimitReached={isLimitReached}
-              cooldownRemaining={cooldownRemaining}
-              handleWatchAd={handleWatchAd}
-              resetCountdown={resetCountdown}
-              onHandleSocialTask={handleHandleSocialTask}
-            />
-          )}
+              {activeTab === 'earn' && (
+                <EarnTab 
+                  profile={profile}
+                  adState={adState}
+                  tasks={tasks}
+                  dailyLimit={systemConfig?.dailyLimit || 15}
+                  isLimitReached={isLimitReached}
+                  cooldownRemaining={cooldownRemaining}
+                  handleWatchAd={handleWatchAd}
+                  resetCountdown={resetCountdown}
+                  onHandleSocialTask={handleHandleSocialTask}
+                />
+              )}
 
-          {activeTab === 'wallet' && (
-            <WalletTab 
-              profile={profile}
-              currencyDisplay={currencyDisplay}
-              updateProfile={() => {}}
-            />
-          )}
+              {activeTab === 'wallet' && (
+                <WalletTab 
+                  profile={profile}
+                  currencyDisplay={currencyDisplay}
+                  updateProfile={() => {}}
+                />
+              )}
 
-          {activeTab === 'friends' && profile && (
-            <ReferralPanel 
-              profile={profile} 
-              onRedeemCode={redeemReferralCode}
-            />
-          )}
+              {activeTab === 'friends' && profile && (
+                <ReferralPanel 
+                  profile={profile} 
+                  onRedeemCode={redeemReferralCode}
+                />
+              )}
 
-          {activeTab === 'profile' && (
-            <ProfileTab 
-              user={user}
-              profile={profile}
-              setIsCurrencyModalOpen={setIsCurrencyModalOpen}
-            />
-          )}
-
-          {activeTab === 'home' && <PepePriceTicker preferredCurrency={profile?.preferredCurrency} />}
+              {activeTab === 'profile' && (
+                <ProfileTab 
+                  user={user}
+                  profile={profile}
+                  setIsCurrencyModalOpen={setIsCurrencyModalOpen}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         <CurrencyModal 
@@ -1099,13 +1133,33 @@ export default function UserApp() {
                   <div className="flex flex-col gap-4">
                     <div className="flex items-center gap-3">
                       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${socialTaskVerify.status !== 'idle' ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200'}`}>
-                        {socialTaskVerify.status !== 'idle' ? <CheckCircle2 size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
+                        {socialTaskVerify.status !== 'idle' ? (
+                          <motion.div 
+                            initial={{ width: "0%" }}
+                            animate={{ width: socialTaskVerify.status === 'success' ? "100%" : "50%" }}
+                            className="absolute -bottom-2.5 left-0 h-1 bg-emerald-500 rounded-full"
+                          />
+                        ) : null}
                       </div>
                       <span className={`text-[10px] font-black uppercase tracking-widest ${socialTaskVerify.status !== 'idle' ? 'text-slate-900' : 'text-slate-400'}`}>Join Channel</span>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-200'}`}>
-                        {['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? <CheckCircle2 size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
+                    <div className="flex items-center gap-3 relative">
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? 'bg-emerald-50 border-emerald-500 text-emerald-500 transition-colors' : 'border-slate-200'}`}>
+                        {socialTaskVerify.status === 'success' ? <CheckCircle2 size={12} strokeWidth={3} /> : 
+                         socialTaskVerify.status === 'verifying' ? <Loader2 size={12} className="animate-spin text-emerald-500" /> : 
+                         socialTaskVerify.status === 'failed' ? <X size={12} strokeWidth={3} className="text-rose-500" /> :
+                         <div className="w-1.5 h-1.5 rounded-full bg-slate-200" />}
+                        
+                        {socialTaskVerify.status === 'verifying' ? (
+                          <motion.div 
+                            initial={{ width: "0%" }}
+                            animate={{ width: "90%" }}
+                            transition={{ duration: 4 }}
+                            className="absolute -bottom-2.5 left-0 h-1 bg-emerald-500 rounded-full"
+                          />
+                        ) : socialTaskVerify.status === 'success' ? (
+                          <div className="absolute -bottom-2.5 left-0 h-1 w-full bg-emerald-500 rounded-full" />
+                        ) : null}
                       </div>
                       <span className={`text-[10px] font-black uppercase tracking-widest ${['verifying', 'success', 'failed'].includes(socialTaskVerify.status) ? 'text-slate-900' : 'text-slate-400'}`}>Verify Protocol</span>
                     </div>
@@ -1140,6 +1194,29 @@ export default function UserApp() {
                   </div>
                 )}
               </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Status Toast */}
+        <AnimatePresence>
+          {statusToast.show && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[300] w-[90%] max-w-[340px]"
+            >
+              <div className={`p-4 rounded-2xl shadow-2xl border flex items-center gap-3 backdrop-blur-xl ${
+                statusToast.type === 'error' ? 'bg-rose-50 border-rose-100 text-rose-600' :
+                statusToast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' :
+                'bg-slate-900 border-slate-800 text-white'
+              }`}>
+                {statusToast.type === 'error' ? <AlertCircle size={18} /> : 
+                 statusToast.type === 'success' ? <CheckCircle2 size={18} /> : 
+                 <Info size={18} />}
+                <span className="text-[11px] font-black uppercase tracking-tight">{statusToast.message}</span>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

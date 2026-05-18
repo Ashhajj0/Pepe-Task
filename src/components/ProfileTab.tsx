@@ -13,7 +13,7 @@ interface ProfileTabProps {
 
 export const ProfileTab = memo(({ user, profile, setIsCurrencyModalOpen }: ProfileTabProps) => {
   return (
-    <div className="px-6 py-6 space-y-8 min-h-full ambient-glow pb-32 no-scrollbar overflow-y-auto">
+    <div className="px-6 py-6 space-y-8 ambient-glow">
       <div className="flex flex-col gap-1">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Node Configuration</h2>
         <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest opacity-60 italic text-center sm:text-left">Identity Management</p>

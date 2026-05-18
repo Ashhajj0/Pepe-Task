@@ -12,7 +12,7 @@ export const AD_CONFIG = {
   AD_DURATION_MAX: 2,
 };
 
-export const canWatchAd = (profile: UserProfile | null): { canWatch: boolean; reason?: string; remainingCooldown?: number } => {
+export const canWatchAd = (profile: UserProfile | null, dailyLimitOverride?: number): { canWatch: boolean; reason?: string; remainingCooldown?: number } => {
   if (!profile) return { canWatch: false, reason: 'Profile not loaded' };
 
   // Check Daily Limit
@@ -20,7 +20,9 @@ export const canWatchAd = (profile: UserProfile | null): { canWatch: boolean; re
   const lastReset = safeDate(profile.lastDailyReset);
   const isNewDay = now.toDateString() !== lastReset.toDateString();
   
-  if (!isNewDay && profile.adsWatchedToday >= AD_CONFIG.DAILY_LIMIT) {
+  const limit = dailyLimitOverride || AD_CONFIG.DAILY_LIMIT;
+  
+  if (!isNewDay && profile.adsWatchedToday >= limit) {
     return { canWatch: false, reason: 'Daily limit reached. Come back tomorrow.' };
   }
 
@@ -61,6 +63,11 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       const userData = userSnap.data() as UserProfile;
       const currentAdsCount = userData.adsWatchedToday || 0;
       
+      // Fetch dynamic daily limit from config
+      const configRef = doc(db, 'system', 'config');
+      const configSnap = await transaction.get(configRef);
+      const dailyLimit = configSnap.exists() ? configSnap.data().dailyLimit || 15 : 15;
+      
       // Daily Reset Logic check inside transaction
       const now = new Date();
       const todayStr = now.toDateString(); 
@@ -69,9 +76,9 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       
       const nextAdsCount = isNewDay ? 1 : currentAdsCount + 1;
       
-      console.log(`[adService] User ${userId}: currentAds: ${currentAdsCount}, nextAds: ${nextAdsCount}, isNewDay: ${isNewDay}`);
+      console.log(`[adService] User ${userId}: currentAds: ${currentAdsCount}, nextAds: ${nextAdsCount}, isNewDay: ${isNewDay}, limit: ${dailyLimit}`);
 
-      if (nextAdsCount > AD_CONFIG.DAILY_LIMIT) {
+      if (nextAdsCount > dailyLimit) {
         throw new Error('Daily limit reached');
       }
 
@@ -187,26 +194,33 @@ export const claimSocialTask = async (userId: string, taskId: string, rewardValu
 
 export const claimLevelBonus = async (userId: string, currentProfile: UserProfile) => {
   const userRef = doc(db, 'users', userId);
-  const bonus = 500;
+  const BONUS_PER_LEVEL = 500;
 
   try {
-    await runTransaction(db, async (transaction) => {
+    const result = await runTransaction(db, async (transaction) => {
       const userSnap = await transaction.get(userRef);
       if (!userSnap.exists()) throw new Error('User not found');
       const userData = userSnap.data() as UserProfile;
 
-      if (userData.level < 2) throw new Error('Level bonuses start from level 2');
-      if ((userData.lastClaimedLevel || 0) >= userData.level) {
-        throw new Error('Level bonus already claimed for current level');
+      const currentLevel = userData.level || 1;
+      const lastClaimed = userData.lastClaimedLevel || 1;
+      const unclaimedCount = currentLevel - lastClaimed;
+
+      if (unclaimedCount <= 0) {
+        throw new Error('No unclaimed level bonuses found');
       }
 
+      const totalBonus = unclaimedCount * BONUS_PER_LEVEL;
+
       transaction.update(userRef, sanitizeFirestoreData({
-        balance: increment(bonus),
-        totalEarned: increment(bonus),
-        lastClaimedLevel: userData.level
+        balance: increment(totalBonus),
+        totalEarned: increment(totalBonus),
+        lastClaimedLevel: currentLevel
       }));
+
+      return { totalBonus, currentLevel };
     });
-    return { success: true, bonus };
+    return { success: true, ...result };
   } catch (error) {
     console.error('Error claiming level bonus:', error);
     throw error;

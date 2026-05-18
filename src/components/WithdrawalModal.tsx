@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Wallet, CreditCard, ChevronRight, AlertCircle, CheckCircle2, History, Clock, Info } from 'lucide-react';
+import { X, Wallet, CreditCard, ChevronRight, AlertCircle, CheckCircle2, History, Clock, Info, Loader2 } from 'lucide-react';
 import { UserProfile, WithdrawalRequest, WithdrawalStatus } from '../types';
 import { WithdrawalService } from '../services/withdrawalService';
 import { Counter } from './UIElements';
@@ -220,9 +220,18 @@ export const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClos
                     <button 
                       type="submit"
                       disabled={loading || success}
-                      className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase tracking-widest disabled:opacity-50 active:scale-[0.98] transition-all shadow-xl shadow-slate-200"
+                      className="w-full h-14 bg-black text-white rounded-2xl font-bold uppercase tracking-widest disabled:opacity-50 active:scale-[0.98] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-3"
                     >
-                      {loading ? 'Processing...' : 'Submit Request'}
+                      {loading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          <span>Processing...</span>
+                        </>
+                      ) : success ? (
+                        'Request Complete'
+                      ) : (
+                        'Submit Request'
+                      )}
                     </button>
                   </form>
                 </>

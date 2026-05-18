@@ -1,13 +1,15 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { memo } from 'react';
-import { UserProfile } from '../types';
+import { UserProfile, TaskProtocol } from '../types';
 import { SocialTask, TimerDisplay } from './UIElements';
-import { PlayCircle, Timer, Users, ArrowUpRight, Zap, Trophy } from 'lucide-react';
+import { PlayCircle, Timer, Users, ArrowUpRight, Zap, Trophy, Loader2, Gem } from 'lucide-react';
 import { safeNumber } from '../lib/utils/firestore';
 
 interface EarnTabProps {
   profile: UserProfile | null;
   adState: string;
+  tasks: TaskProtocol[];
+  dailyLimit: number;
   isLimitReached: boolean;
   cooldownRemaining: number;
   handleWatchAd: () => void;
@@ -16,13 +18,13 @@ interface EarnTabProps {
   onHandleSocialTask: (taskId: string, url: string, reward: number) => void;
 }
 
-export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaining, handleWatchAd, resetCountdown, onHandleSocialTask }: EarnTabProps) => {
+export const EarnTab = memo(({ profile, adState, tasks, dailyLimit, isLimitReached, cooldownRemaining, handleWatchAd, resetCountdown, onHandleSocialTask }: EarnTabProps) => {
   const isTaskCompleted = (taskId: string) => {
     return (profile as any)?.completedTasks?.includes(taskId);
   };
 
   return (
-    <div className="px-6 py-6 space-y-6 pb-32 min-h-full ambient-glow no-scrollbar overflow-y-auto">
+    <div className="px-6 py-6 space-y-6 ambient-glow">
       <div className="flex flex-col gap-1 mb-2">
         <h2 className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em]">Earn Credits</h2>
         <p className="text-[10px] text-slate-300 font-bold uppercase tracking-widest opacity-60 italic">Extraction Protocol</p>
@@ -71,14 +73,14 @@ export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaini
             </div>
             <div className="text-right">
               <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">Quota</span>
-              <span className="text-xs font-black text-slate-900">{safeNumber(profile?.adsWatchedToday, 0)} / 15</span>
+              <span className="text-xs font-black text-slate-900">{safeNumber(profile?.adsWatchedToday, 0)} / {dailyLimit}</span>
             </div>
           </div>
 
           <button 
             onClick={handleWatchAd}
             disabled={isLimitReached || adState !== 'idle'}
-            className={`w-full h-14 rounded-2xl flex items-center justify-center font-black text-[11px] uppercase tracking-widest transition-all ${
+            className={`w-full h-14 rounded-2xl flex items-center justify-center gap-3 font-black text-[11px] uppercase tracking-widest transition-all ${
               isLimitReached 
               ? 'bg-slate-100 text-slate-300 pointer-events-none' 
               : adState === 'idle'
@@ -86,10 +88,11 @@ export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaini
                 : 'bg-slate-50 border border-slate-100 text-slate-400'
             }`}
           >
+            {adState === 'loading' && <Loader2 size={16} className="animate-spin" />}
             {isLimitReached 
               ? 'Daily Limit Reached' 
               : adState === 'loading' 
-                ? 'Loading Ad...' 
+                ? 'Initializing...' 
                 : adState === 'cooldown' 
                   ? `Next In (${cooldownRemaining}s)` 
                   : 'Watch to Earn'}
@@ -121,14 +124,22 @@ export const EarnTab = memo(({ profile, adState, isLimitReached, cooldownRemaini
           <div className="h-px flex-1 bg-slate-100"></div>
         </div>
         <div className="space-y-3">
-           <SocialTask 
-            icon={<Users size={18} />} 
-            title="Pepe Task Channel" 
-            reward="+100" 
-            actionLabel={isTaskCompleted('tg_channel') ? 'Claimed' : 'Join'}
-            disabled={isTaskCompleted('tg_channel')}
-            onClick={() => onHandleSocialTask('tg_channel', 'https://t.me/mypepetask', 100)}
-           />
+           {tasks.map((task) => (
+             <SocialTask 
+               key={task.id}
+               icon={<Gem size={18} />} 
+               title={task.name} 
+               reward={`+${task.reward.toLocaleString()}`} 
+               actionLabel={isTaskCompleted(task.id) ? 'Claimed' : 'Join'}
+               disabled={isTaskCompleted(task.id)}
+               onClick={() => onHandleSocialTask(task.id, task.link, task.reward)}
+             />
+           ))}
+           {tasks.length === 0 && (
+             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center py-4 italic opacity-50">
+               No additional tasks available
+             </p>
+           )}
         </div>
       </div>
     </div>
