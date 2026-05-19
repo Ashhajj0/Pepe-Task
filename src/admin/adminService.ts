@@ -66,12 +66,53 @@ export const AdminService = {
   },
 
   async deleteUser(userId: string) {
-    const userRef = doc(db, 'users', userId);
-    // Note: In a real app, you might want to delete subcollections too
-    // For now, simple delete of the user document
-    const { deleteDoc: firestoreDeleteDoc } = await import('firebase/firestore');
-    await firestoreDeleteDoc(userRef);
-    await this.logAction('DELETE_USER', userId);
+    const { deleteDoc: firestoreDeleteDoc, collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
+    
+    try {
+      const batch = writeBatch(db);
+      
+      // 1. Delete user document
+      const userRef = doc(db, 'users', userId);
+      batch.delete(userRef);
+      
+      // 2. Delete withdrawals
+      const withdrawalsQuery = query(collection(db, 'withdrawals'), where('userId', '==', userId));
+      const withdrawalsSnap = await getDocs(withdrawalsQuery);
+      withdrawalsSnap.forEach((d) => {
+        batch.delete(d.ref);
+      });
+
+      // 3. Delete referral records where they are referrer
+      const refQuery1 = query(collection(db, 'referralRecords'), where('referrerId', '==', userId));
+      const refSnap1 = await getDocs(refQuery1);
+      refSnap1.forEach(d => batch.delete(d.ref));
+
+      // 4. Delete referral records where they are referred
+      const refQuery2 = query(collection(db, 'referralRecords'), where('referredId', '==', userId));
+      const refSnap2 = await getDocs(refQuery2);
+      refSnap2.forEach(d => batch.delete(d.ref));
+      
+      // 5. Log the action
+      const adminUid = auth.currentUser?.uid;
+      if (adminUid) {
+        const logRef = doc(collection(db, 'adminLogs'));
+        batch.set(logRef, {
+          adminId: adminUid,
+          action: 'DELETE_USER_PERMANENT',
+          targetUserId: userId,
+          timestamp: serverTimestamp(),
+          details: { 
+            deletedWithdrawals: withdrawalsSnap.size,
+            deletedReferralRecords: refSnap1.size + refSnap2.size
+          }
+        });
+      }
+
+      await batch.commit();
+    } catch (e) {
+      console.error("Error deleting user fully:", e);
+      await firestoreDeleteDoc(doc(db, 'users', userId));
+    }
   },
 
   async updateUserBalance(userId: string, newBalance: number) {
@@ -251,21 +292,21 @@ export const AdminService = {
 
   // System Configuration (Daily Limit)
   subscribeToSystemConfig(callback: (config: any) => void) {
-    const configRef = doc(db, 'system', 'config');
+    const configRef = doc(db, 'settings', 'app');
     return onSnapshot(configRef, (snap) => {
       if (snap.exists()) {
         callback(snap.data());
       } else {
-        callback({});
+        callback({ dailyAdLimit: 15 }); // Provide default if not exists
       }
     });
   },
 
   async updateDailyLimit(limit: number) {
     const { setDoc } = await import('firebase/firestore');
-    const configRef = doc(db, 'system', 'config');
-    await setDoc(configRef, { dailyLimit: limit }, { merge: true });
-    await this.logAction('UPDATE_DAILY_LIMIT', undefined, { dailyLimit: limit });
+    const configRef = doc(db, 'settings', 'app');
+    await setDoc(configRef, { dailyAdLimit: limit }, { merge: true });
+    await this.logAction('UPDATE_DAILY_LIMIT', undefined, { dailyAdLimit: limit });
   },
 
   subscribeToRecentActivity(callback: (logs: AdminLog[]) => void) {

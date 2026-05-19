@@ -64,9 +64,9 @@ export const claimAdReward = async (userId: string, reward: number, currentProfi
       const currentAdsCount = userData.adsWatchedToday || 0;
       
       // Fetch dynamic daily limit from config
-      const configRef = doc(db, 'system', 'config');
+      const configRef = doc(db, 'settings', 'app');
       const configSnap = await transaction.get(configRef);
-      const dailyLimit = configSnap.exists() ? configSnap.data().dailyLimit || 15 : 15;
+      const dailyLimit = configSnap.exists() ? configSnap.data().dailyAdLimit || 15 : 15;
       
       // Daily Reset Logic check inside transaction
       const now = new Date();

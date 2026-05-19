@@ -46,8 +46,8 @@ export const DashboardHome: React.FC = () => {
 
     const unsubConfig = AdminService.subscribeToSystemConfig((data) => {
       setSystemConfig(data);
-      if (data.dailyLimit !== undefined) {
-        setDailyLimitInput(data.dailyLimit.toString());
+      if (data.dailyAdLimit !== undefined) {
+        setDailyLimitInput(data.dailyAdLimit.toString());
       }
     });
 
@@ -250,7 +250,7 @@ export const DashboardHome: React.FC = () => {
                   <span className="text-[11px] font-black uppercase tracking-widest text-slate-900">Daily Extraction Limit</span>
                 </div>
                 <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                  {systemConfig.dailyLimit ?? 'Not Set'}
+                  {systemConfig.dailyAdLimit ?? '15'}
                 </div>
               </div>
               <div className="flex gap-4">

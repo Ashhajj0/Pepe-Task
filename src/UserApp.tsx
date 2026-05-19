@@ -136,9 +136,9 @@ export default function UserApp() {
   }, [profile?.balance, profile?.preferredCurrency, pepePrice]);
 
   const dailyProgress = useMemo(() => {
-    const limit = systemConfig?.dailyLimit || 15;
+    const limit = systemConfig?.dailyAdLimit || 15;
     return (safeNumber(profile?.adsWatchedToday) / limit) * 100;
-  }, [profile?.adsWatchedToday, systemConfig?.dailyLimit]);
+  }, [profile?.adsWatchedToday, systemConfig?.dailyAdLimit]);
 
   const levelProgress = useMemo(() => {
     return safeNumber(profile?.levelProgress);
@@ -279,7 +279,7 @@ export default function UserApp() {
       setTasks(taskList);
     });
 
-    const unsubConfig = onSnapshot(configRef, (snap) => {
+    const unsubConfig = onSnapshot(doc(db, 'settings', 'app'), (snap) => {
       if (snap.exists()) setSystemConfig(snap.data());
     });
     
@@ -463,7 +463,7 @@ export default function UserApp() {
       return;
     }
 
-    const check = adService.canWatchAd(profile, systemConfig?.dailyLimit);
+    const check = adService.canWatchAd(profile, systemConfig?.dailyAdLimit);
     if (!check.canWatch) {
       if (check.reason?.includes('limit')) setIsLimitReached(true);
       if (window.Telegram?.WebApp?.showAlert) {
@@ -1035,7 +1035,7 @@ export default function UserApp() {
                   profile={profile}
                   adState={adState}
                   tasks={tasks}
-                  dailyLimit={systemConfig?.dailyLimit || 15}
+                  dailyLimit={systemConfig?.dailyAdLimit || 15}
                   isLimitReached={isLimitReached}
                   cooldownRemaining={cooldownRemaining}
                   handleWatchAd={handleWatchAd}

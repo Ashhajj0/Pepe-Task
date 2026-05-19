@@ -12,15 +12,24 @@ import { motion } from 'motion/react';
 
 export const UsersManagement: React.FC = () => {
   const [users, setUsers] = useState<UserProfile[]>([]);
+  const [systemConfig, setSystemConfig] = useState<any>({ dailyAdLimit: 15 });
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = AdminService.subscribeToUsers((data) => {
+    const unsubscribeUsers = AdminService.subscribeToUsers((data) => {
       setUsers(data);
       setLoading(false);
     });
-    return () => unsubscribe();
+
+    const unsubscribeConfig = AdminService.subscribeToSystemConfig((data) => {
+      setSystemConfig(data);
+    });
+
+    return () => {
+      unsubscribeUsers();
+      unsubscribeConfig();
+    };
   }, []);
 
   const filteredUsers = users.filter(u => 
@@ -131,13 +140,13 @@ export const UsersManagement: React.FC = () => {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Daily Ad Count (0-15)</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Daily Ad Count (0-{systemConfig.dailyAdLimit || 15})</label>
                 <input 
                   type="number"
                   value={editingUser.adsWatchedToday || 0}
                   onChange={(e) => setEditingUser({ ...editingUser, adsWatchedToday: parseInt(e.target.value) || 0 })}
                   className="w-full h-12 bg-slate-50 border border-slate-100 rounded-xl px-4 text-sm font-bold focus:ring-2 focus:ring-black outline-none transition-all"
-                  max="15"
+                  max={systemConfig.dailyAdLimit || 15}
                 />
               </div>
               <div className="space-y-2">
@@ -216,7 +225,7 @@ export const UsersManagement: React.FC = () => {
               <div className="md:col-span-2 pt-4">
                 <button 
                   onClick={() => {
-                    if (confirm(`CRITICAL: Are you sure you want to PERMANENTLY DELETE @${editingUser.username}? This data will be gone forever.`)) {
+                    if (confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) {
                       AdminService.deleteUser(editingUser.id!);
                       setEditingUser(null);
                     }
@@ -249,7 +258,7 @@ export const UsersManagement: React.FC = () => {
   };
 
   const handleDeleteUser = (user: UserProfile) => {
-    if (confirm(`CRITICAL: Are you sure you want to PERMANENTLY DELETE @${user.username}? This cannot be undone.`)) {
+    if (confirm('Are you sure you want to permanently delete this user? This action cannot be undone.')) {
       AdminService.deleteUser(user.id!);
     }
   };
@@ -376,6 +385,12 @@ export const UsersManagement: React.FC = () => {
                     </td>
                     <td className="p-6">
                       <div className="flex gap-4">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Ads Today</span>
+                          <span className={`text-xs font-bold ${ (user.adsWatchedToday || 0) >= (systemConfig.dailyAdLimit || 15) ? 'text-rose-500' : 'text-emerald-500'}`}>
+                            {user.adsWatchedToday || 0}/{systemConfig.dailyAdLimit || 15}
+                          </span>
+                        </div>
                         <div className="flex flex-col">
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Referrals</span>
                           <span className="text-xs font-bold text-slate-900">{user.totalReferrals || 0}</span>
